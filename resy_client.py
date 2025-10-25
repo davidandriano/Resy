@@ -161,11 +161,34 @@ class ResyClient:
         """
         logger.info(f"Finding availability for venue {venue_id} on {reservation_date}")
 
+        # First, get venue details to extract latitude and longitude
+        venue_url = f"{self.BASE_URL}/3/venue?id={venue_id}"
+        try:
+            venue_response = self.session.get(venue_url)
+            venue_response.raise_for_status()
+            venue_data = venue_response.json()
+
+            location = venue_data.get("location", {})
+            lat = location.get("latitude")
+            long = location.get("longitude")
+
+            if not lat or not long:
+                logger.warning(f"Could not get venue location, using default SF coordinates")
+                lat = 37.7749
+                long = -122.4194
+
+        except Exception as e:
+            logger.warning(f"Failed to get venue location: {e}, using default SF coordinates")
+            lat = 37.7749
+            long = -122.4194
+
         url = f"{self.BASE_URL}/4/find"
         params = {
             "venue_id": venue_id,
             "day": reservation_date.strftime("%Y-%m-%d"),
-            "party_size": party_size
+            "party_size": party_size,
+            "lat": lat,
+            "long": long
         }
 
         try:
