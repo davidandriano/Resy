@@ -206,11 +206,29 @@ class ResyClient:
             available_slots = []
             for venue_data in slots:
                 for slot in venue_data.get("slots", []):
+                    # Extract display time from config or calculate from date
+                    config = slot.get("config", {})
+                    date_info = slot.get("date", {})
+                    start_time = date_info.get("start", "")
+
+                    # Parse display time
+                    display_time = config.get("display_time")
+                    if not display_time and start_time:
+                        # Calculate from start time (format: "2025-10-31 21:45:00")
+                        try:
+                            time_part = start_time.split(" ")[1] if " " in start_time else ""
+                            if time_part:
+                                hour, minute, _ = time_part.split(":")
+                                display_time = f"{hour}:{minute}"
+                        except:
+                            display_time = None
+
                     slot_info = {
-                        "config_id": slot.get("config", {}).get("id"),
-                        "time": slot.get("date", {}).get("start"),
-                        "display_time": slot.get("config", {}).get("display_time"),
-                        "type": slot.get("config", {}).get("type"),
+                        "config_token": config.get("token"),  # Use token instead of id
+                        "config_id": config.get("id"),  # Keep id for reference
+                        "time": start_time,
+                        "display_time": display_time,
+                        "type": config.get("type"),
                         "badge": slot.get("badge", {}).get("text") if slot.get("badge") else None
                     }
                     available_slots.append(slot_info)
@@ -231,23 +249,23 @@ class ResyClient:
             logger.error(f"Failed to find availability: {e}")
             return []
 
-    def get_booking_details(self, config_id: str, party_size: int, reservation_date: date) -> Optional[Dict[str, Any]]:
+    def get_booking_details(self, config_token: str, party_size: int, reservation_date: date) -> Optional[Dict[str, Any]]:
         """
         Get booking token and details needed for reservation
 
         Args:
-            config_id: Configuration ID from availability search
+            config_token: Configuration token from availability search (e.g., "rgs://resy/...")
             party_size: Number of people
             reservation_date: Date for reservation
 
         Returns:
             Booking details dictionary or None
         """
-        logger.info(f"Getting booking details for config {config_id}")
+        logger.info(f"Getting booking details for config token: {config_token[:50]}...")
 
         url = f"{self.BASE_URL}/3/details"
         params = {
-            "config_id": config_id,
+            "config_id": config_token,  # API expects config_id param but wants the token value
             "day": reservation_date.strftime("%Y-%m-%d"),
             "party_size": party_size
         }
@@ -261,6 +279,8 @@ class ResyClient:
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to get booking details: {e}")
+            if hasattr(e.response, 'text'):
+                logger.error(f"Response: {e.response.text}")
             return None
 
     def book_reservation(

@@ -123,9 +123,9 @@ class ResyBot:
         slot = available_slots[0]
         logger.info(f"Found available slot: {slot['display_time']}")
 
-        # Get booking details
+        # Get booking details using the config token
         booking_details = self.client.get_booking_details(
-            config_id=slot["config_id"],
+            config_token=slot["config_token"],
             party_size=config.party_size,
             reservation_date=config.reservation_date
         )
