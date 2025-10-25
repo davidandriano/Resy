@@ -1,0 +1,94 @@
+{
+  "san_francisco": [
+    {
+      "name": "Izakaya Rintaro",
+      "venue_id": 339,
+      "neighborhood": "Mission",
+      "cuisine": "Japanese"
+    },
+    {
+      "name": "State Bird Provisions",
+      "venue_id": 187,
+      "neighborhood": "Western Addition",
+      "cuisine": "American"
+    },
+    {
+      "name": "SPQR",
+      "venue_id": 194,
+      "neighborhood": "Pacific Heights",
+      "cuisine": "Italian"
+    },
+    {
+      "name": "Nopa",
+      "venue_id": 108,
+      "neighborhood": "Western Addition",
+      "cuisine": "American"
+    },
+    {
+      "name": "Zuni Cafe",
+      "venue_id": 281,
+      "neighborhood": "Hayes Valley",
+      "cuisine": "Mediterranean"
+    },
+    {
+      "name": "Foreign Cinema",
+      "venue_id": 71,
+      "neighborhood": "Mission",
+      "cuisine": "American"
+    },
+    {
+      "name": "Rich Table",
+      "venue_id": 828,
+      "neighborhood": "Hayes Valley",
+      "cuisine": "American"
+    },
+    {
+      "name": "Liholiho Yacht Club",
+      "venue_id": 1505,
+      "neighborhood": "Nob Hill",
+      "cuisine": "Hawaiian"
+    },
+    {
+      "name": "Benu",
+      "venue_id": 455,
+      "neighborhood": "SoMa",
+      "cuisine": "American"
+    },
+    {
+      "name": "Tartine Manufactory",
+      "venue_id": 3387,
+      "neighborhood": "Mission",
+      "cuisine": "Bakery/Cafe"
+    },
+    {
+      "name": "Flour + Water",
+      "venue_id": 305,
+      "neighborhood": "Mission",
+      "cuisine": "Italian"
+    },
+    {
+      "name": "Lazy Bear",
+      "venue_id": 1269,
+      "neighborhood": "Mission",
+      "cuisine": "American"
+    },
+    {
+      "name": "Saison",
+      "venue_id": 588,
+      "neighborhood": "SoMa",
+      "cuisine": "American"
+    },
+    {
+      "name": "Marlowe",
+      "venue_id": 253,
+      "neighborhood": "SoMa",
+      "cuisine": "American"
+    },
+    {
+      "name": "Central Kitchen",
+      "venue_id": 1136,
+      "neighborhood": "Mission",
+      "cuisine": "American"
+    }
+  ]
+}
