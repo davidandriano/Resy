@@ -51,8 +51,13 @@ class ResyClient:
             "password": self.password
         }
 
+        # Create headers with form-encoded content type for login
+        login_headers = self.session.headers.copy()
+        login_headers["Content-Type"] = "application/x-www-form-urlencoded"
+
         try:
-            response = self.session.post(url, json=payload)
+            # Use data= instead of json= for form-encoded submission
+            response = self.session.post(url, data=payload, headers=login_headers)
             response.raise_for_status()
 
             data = response.json()
@@ -274,8 +279,12 @@ class ResyClient:
         # Remove None values
         payload = {k: v for k, v in payload.items() if v is not None}
 
+        # Use form-encoded content type for booking
+        booking_headers = self.session.headers.copy()
+        booking_headers["Content-Type"] = "application/x-www-form-urlencoded"
+
         try:
-            response = self.session.post(url, json=payload)
+            response = self.session.post(url, data=payload, headers=booking_headers)
             response.raise_for_status()
 
             data = response.json()
@@ -307,8 +316,12 @@ class ResyClient:
         url = f"{self.BASE_URL}/3/cancel"
         payload = {"resy_token": resy_token}
 
+        # Use form-encoded content type for cancellation
+        cancel_headers = self.session.headers.copy()
+        cancel_headers["Content-Type"] = "application/x-www-form-urlencoded"
+
         try:
-            response = self.session.post(url, json=payload)
+            response = self.session.post(url, data=payload, headers=cancel_headers)
             response.raise_for_status()
 
             logger.info("Reservation cancelled successfully")
