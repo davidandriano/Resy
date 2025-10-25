@@ -120,6 +120,7 @@ class ResyClient:
         """
         logger.info(f"Searching for venue: {query}")
 
+        # First try the search API
         url = f"{self.BASE_URL}/3/venuesearch/search"
         params = {
             "query": query,
@@ -133,12 +134,55 @@ class ResyClient:
             data = response.json()
             venues = data.get("search", {}).get("hits", [])
 
-            logger.info(f"Found {len(venues)} venue(s)")
-            return venues
+            if venues:
+                logger.info(f"Found {len(venues)} venue(s)")
+                return venues
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Venue search failed: {e}")
-            return []
+            logger.warning(f"Venue search API failed: {e}, trying alternative method...")
+
+        # If search API fails, try looking up by URL slug
+        return self.search_venue_by_slug(query, location)
+
+    def search_venue_by_slug(self, query: str, location: str = "ny") -> List[Dict[str, Any]]:
+        """
+        Search for venue by constructing URL slug from restaurant name
+
+        Args:
+            query: Restaurant name
+            location: Location code
+
+        Returns:
+            List with venue info if found
+        """
+        # Create URL slug from restaurant name (lowercase, spaces to hyphens)
+        slug = query.lower().replace(" ", "-").replace("'", "")
+
+        logger.info(f"Trying venue lookup with slug: {slug}")
+
+        url = f"{self.BASE_URL}/3/venue?url_slug={slug}&location={location}"
+
+        try:
+            response = self.session.get(url)
+            response.raise_for_status()
+
+            data = response.json()
+            venue_id = data.get("id", {}).get("resy")
+
+            if venue_id:
+                # Format as search result for compatibility
+                venue_result = {
+                    "id": {"resy": venue_id},
+                    "name": data.get("name"),
+                    "location": data.get("location")
+                }
+                logger.info(f"Found venue via slug: {data.get('name')} (ID: {venue_id})")
+                return [venue_result]
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Venue slug lookup failed: {e}")
+
+        return []
 
     def find_availability(
         self,
