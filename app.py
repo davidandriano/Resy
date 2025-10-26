@@ -1,5 +1,5 @@
 """
-Resy & OpenTable Reservation Bot - Modern UI with Platform-Specific Authentication
+Reservation Hunter - Resy-Inspired Modern Design
 """
 import streamlit as st
 from datetime import date, datetime, timedelta
@@ -11,227 +11,304 @@ import time
 
 # Configure page
 st.set_page_config(
-    page_title="TableHunter | Resy & OpenTable Bot",
+    page_title="Reservation Hunter",
     page_icon="🍽️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Modern Custom CSS
+# Resy-Inspired Modern CSS
 st.markdown("""
 <style>
-    /* Import modern fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
 
     /* Global styles */
-    .main {
-        font-family: 'Inter', sans-serif;
+    * {
+        font-family: 'Montserrat', sans-serif;
     }
 
-    /* Hide Streamlit branding */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Lora', serif;
+    }
+
+    /* Hide Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    .stDeployButton {display: none;}
 
-    /* Modern gradient header */
-    .gradient-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2.5rem 2rem;
-        border-radius: 16px;
-        margin-bottom: 2rem;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    /* Custom header */
+    .custom-header {
+        background: white;
+        padding: 1.5rem 3rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 
-    .gradient-header h1 {
-        color: white;
-        font-size: 3rem;
+    .logo {
+        font-family: 'Lora', serif;
+        font-size: 1.8rem;
         font-weight: 700;
-        margin: 0;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        color: #1a1a1a;
+        letter-spacing: -0.5px;
     }
 
-    .gradient-header p {
-        color: rgba(255,255,255,0.9);
-        font-size: 1.1rem;
-        margin-top: 0.5rem;
+    .search-container {
+        flex: 1;
+        max-width: 500px;
+        margin: 0 2rem;
     }
 
-    /* Platform badges */
-    .badge-resy {
-        background: linear-gradient(135deg, #ff5a5f 0%, #ff385c 100%);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: inline-block;
-        box-shadow: 0 2px 8px rgba(255, 90, 95, 0.3);
-    }
-
-    .badge-opentable {
-        background: linear-gradient(135deg, #da3743 0%, #b52735 100%);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: inline-block;
-        box-shadow: 0 2px 8px rgba(218, 55, 67, 0.3);
-    }
-
-    /* Restaurant cards */
+    /* Restaurant cards - Resy style */
     .restaurant-card {
         background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin: 1rem 0;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        overflow: hidden;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        cursor: pointer;
+        margin-bottom: 1.5rem;
     }
 
     .restaurant-card:hover {
-        border-color: #667eea;
-        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
-        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        transform: translateY(-4px);
+    }
+
+    .restaurant-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f5f5f5;
     }
 
     .restaurant-name {
+        font-family: 'Lora', serif;
         font-size: 1.5rem;
         font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 0.5rem;
+        color: #1a1a1a;
+        margin: 0 0 0.5rem 0;
     }
 
-    .restaurant-details {
-        color: #6b7280;
-        font-size: 0.95rem;
-    }
-
-    /* Success and error boxes */
-    .success-box {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin: 1rem 0;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .error-box {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin: 1rem 0;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    }
-
-    .warning-box {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin: 1rem 0;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-    }
-
-    .info-box {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin: 1rem 0;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    /* Availability slots */
-    .slot-available {
-        background: #10b981;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        margin: 4px;
-        display: inline-block;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .slot-available:hover {
-        background: #059669;
-        transform: scale(1.05);
-    }
-
-    .slot-unavailable {
-        background: #e5e7eb;
-        color: #9ca3af;
-        padding: 8px 16px;
-        border-radius: 8px;
-        margin: 4px;
-        display: inline-block;
-    }
-
-    /* Stats cards */
-    .stat-card {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 1.25rem;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-
-    .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #667eea;
-    }
-
-    .stat-label {
-        color: #6b7280;
+    .restaurant-meta {
+        color: #767676;
         font-size: 0.9rem;
-        margin-top: 0.25rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
     }
 
-    /* Modern tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: #f9fafb;
-        padding: 4px;
-        border-radius: 12px;
+    .badge {
+        background: #1a1a1a;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        padding: 12px 24px;
+    .badge-resy {
+        background: #c8102e;
+    }
+
+    .badge-opentable {
+        background: #da3743;
+    }
+
+    .rating {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #1a1a1a;
         font-weight: 500;
     }
 
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* Availability slots - Resy style */
+    .slots-container {
+        padding: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .time-slot {
+        background: white;
+        border: 1.5px solid #1a1a1a;
+        color: #1a1a1a;
+        padding: 12px 20px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .time-slot:hover {
+        background: #1a1a1a;
         color: white;
+    }
+
+    .time-slot-unavailable {
+        background: #f5f5f5;
+        border: 1.5px solid #e5e5e5;
+        color: #bbb;
+        cursor: not-allowed;
+    }
+
+    .time-slot-unavailable:hover {
+        background: #f5f5f5;
+        color: #bbb;
+    }
+
+    /* Booking section */
+    .booking-section {
+        padding: 1.5rem;
+        background: #fafafa;
+        border-top: 1px solid #e5e5e5;
     }
 
     /* Buttons */
     .stButton > button {
-        border-radius: 10px;
+        background: #1a1a1a;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+
+    .stButton > button:hover {
+        background: #333;
+        border: none;
+    }
+
+    /* Search bar */
+    .stTextInput > div > div > input {
+        border-radius: 24px;
+        border: 1.5px solid #e5e5e5;
+        padding: 12px 20px;
+        font-size: 0.95rem;
+    }
+
+    .stTextInput > div > div > input:focus {
+        border-color: #1a1a1a;
+        box-shadow: none;
+    }
+
+    /* Date/Party size inputs */
+    .stNumberInput > div > div > input,
+    .stDateInput > div > div > input {
+        border: 1.5px solid #e5e5e5;
+        border-radius: 4px;
+        padding: 10px 14px;
+    }
+
+    /* Filters */
+    .filter-chip {
+        display: inline-block;
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        border-radius: 20px;
+        padding: 8px 16px;
+        margin: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
         font-weight: 500;
-        transition: all 0.3s ease;
+    }
+
+    .filter-chip:hover {
+        border-color: #1a1a1a;
+        background: #fafafa;
+    }
+
+    .filter-chip-active {
+        background: #1a1a1a;
+        color: white;
+        border-color: #1a1a1a;
     }
 
     /* Login modal */
-    .login-container {
+    .login-modal {
         background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        padding: 2.5rem;
         max-width: 400px;
-        margin: 2rem auto;
+        margin: 3rem auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .login-title {
+        font-family: 'Lora', serif;
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #1a1a1a;
+    }
+
+    /* No results */
+    .no-results {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #767676;
+    }
+
+    .no-results-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    /* Restaurant detail view */
+    .detail-hero {
+        background: #fafafa;
+        padding: 3rem 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+
+    .detail-title {
+        font-family: 'Lora', serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 1rem;
+    }
+
+    .detail-meta {
+        display: flex;
+        gap: 2rem;
+        color: #767676;
+        font-size: 1rem;
+    }
+
+    /* Review section */
+    .review-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .review-author {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .review-text {
+        color: #555;
+        line-height: 1.6;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -260,25 +337,18 @@ if 'resy_bot' not in st.session_state:
     st.session_state.resy_bot = None
 if 'opentable_bot' not in st.session_state:
     st.session_state.opentable_bot = None
-if 'booking_history' not in st.session_state:
-    st.session_state.booking_history = []
 if 'selected_restaurant' not in st.session_state:
     st.session_state.selected_restaurant = None
-if 'show_login_modal' not in st.session_state:
-    st.session_state.show_login_modal = False
-if 'login_platform' not in st.session_state:
-    st.session_state.login_platform = None
+if 'view_mode' not in st.session_state:
+    st.session_state.view_mode = 'browse'  # 'browse' or 'detail'
 if 'resy_email' not in st.session_state:
     st.session_state.resy_email = None
 if 'opentable_email' not in st.session_state:
     st.session_state.opentable_email = None
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
-if 'admin_password' not in st.session_state:
-    st.session_state.admin_password = None
-
-# Admin password (in production, use environment variable or secure storage)
-ADMIN_PASSWORD = "admin123"  # Change this!
+if 'show_login' not in st.session_state:
+    st.session_state.show_login = False
+if 'login_platform' not in st.session_state:
+    st.session_state.login_platform = None
 
 def authenticate_resy(email, password):
     """Authenticate with Resy"""
@@ -286,501 +356,259 @@ def authenticate_resy(email, password):
         from config import Settings
         settings = Settings(resy_email=email, resy_password=password)
         bot = ResyBot(settings)
-
         if bot.authenticate():
             st.session_state.resy_bot = bot
             st.session_state.resy_authenticated = True
             st.session_state.resy_email = email
-            return True, f"✓ Connected to Resy as {email}"
+            return True, f"Connected to Resy"
         else:
-            return False, "Authentication failed. Check your credentials."
+            return False, "Authentication failed"
     except Exception as e:
         return False, f"Error: {str(e)}"
 
 def authenticate_opentable(email, password):
     """Authenticate with OpenTable"""
     try:
-        # Placeholder for OpenTable authentication
-        # This would use the opentable_client.py
         st.session_state.opentable_authenticated = True
         st.session_state.opentable_email = email
-        return True, f"✓ Connected to OpenTable as {email}"
+        return True, f"Connected to OpenTable"
     except Exception as e:
         return False, f"Error: {str(e)}"
 
 def check_availability(venue_id, party_size, reservation_date, platform):
-    """Check availability for a venue"""
-    if platform == "resy" and not st.session_state.resy_authenticated:
-        return []
-    if platform == "opentable" and not st.session_state.opentable_authenticated:
-        return []
+    """Check real-time availability"""
+    if platform == "resy":
+        if not st.session_state.resy_authenticated:
+            return None, "Please login to Resy"
 
-    try:
-        if platform == "resy":
+        try:
             client = st.session_state.resy_bot.client
             slots = client.find_availability(
                 venue_id=int(venue_id),
                 party_size=party_size,
                 reservation_date=reservation_date
             )
-            return slots
-        else:
-            # OpenTable availability check would go here
-            return []
-    except Exception as e:
-        st.error(f"Error checking availability: {str(e)}")
-        return []
+            return slots, None
+        except Exception as e:
+            return None, f"Error: {str(e)}"
 
-def add_new_restaurant(name, venue_id, neighborhood, cuisine, platform="resy"):
-    """Add a new restaurant to the database"""
+    elif platform == "opentable":
+        if not st.session_state.opentable_authenticated:
+            return None, "Please login to OpenTable"
+        return [], None
+
+    return None, "Unknown platform"
+
+def get_cuisines():
+    """Get list of unique cuisines"""
     db = load_restaurants()
+    cuisines = set()
+    for restaurant in db.get("san_francisco", []):
+        cuisines.add(restaurant.get('cuisine', 'Unknown'))
+    return sorted(list(cuisines))
 
-    for restaurant in db["san_francisco"]:
-        if restaurant["venue_id"] == venue_id:
-            return False, "Restaurant already exists in database"
+# Custom Header
+col1, col2, col3 = st.columns([1, 3, 1])
 
-    new_restaurant = {
-        "name": name,
-        "venue_id": venue_id,
-        "neighborhood": neighborhood,
-        "cuisine": cuisine,
-        "platform": platform
-    }
-
-    db["san_francisco"].append(new_restaurant)
-    db["san_francisco"] = sorted(db["san_francisco"], key=lambda x: x["name"])
-
-    save_restaurants(db)
-    st.cache_data.clear()
-
-    return True, f"Added {name} to database!"
-
-def update_restaurant(old_venue_id, name, new_venue_id, neighborhood, cuisine, platform="resy"):
-    """Update an existing restaurant in the database"""
-    db = load_restaurants()
-
-    restaurant_found = False
-    for i, restaurant in enumerate(db["san_francisco"]):
-        if restaurant["venue_id"] == old_venue_id:
-            if new_venue_id != old_venue_id:
-                for other in db["san_francisco"]:
-                    if other["venue_id"] == new_venue_id and other["venue_id"] != old_venue_id:
-                        return False, f"Venue ID {new_venue_id} is already used by another restaurant"
-
-            db["san_francisco"][i] = {
-                "name": name,
-                "venue_id": new_venue_id,
-                "neighborhood": neighborhood,
-                "cuisine": cuisine,
-                "platform": platform
-            }
-            restaurant_found = True
-            break
-
-    if not restaurant_found:
-        return False, "Restaurant not found in database"
-
-    db["san_francisco"] = sorted(db["san_francisco"], key=lambda x: x["name"])
-    save_restaurants(db)
-    st.cache_data.clear()
-
-    return True, f"Updated {name}!"
-
-def delete_restaurant(venue_id):
-    """Delete a restaurant from the database"""
-    db = load_restaurants()
-
-    original_count = len(db["san_francisco"])
-    db["san_francisco"] = [r for r in db["san_francisco"] if r["venue_id"] != venue_id]
-
-    if len(db["san_francisco"]) == original_count:
-        return False, "Restaurant not found in database"
-
-    save_restaurants(db)
-    st.cache_data.clear()
-
-    return True, "Restaurant deleted!"
-
-# Modern Header
-st.markdown("""
-<div class="gradient-header">
-    <h1>🍽️ TableHunter</h1>
-    <p>Your intelligent reservation assistant for Resy & OpenTable</p>
-</div>
-""", unsafe_allow_html=True)
-
-# Auth status bar
-col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
-    db = load_restaurants()
-    total_restaurants = len(db.get("san_francisco", []))
-    resy_count = len([r for r in db.get("san_francisco", []) if r.get("platform") == "resy"])
-    opentable_count = len([r for r in db.get("san_francisco", []) if r.get("platform") == "opentable"])
-
-    st.markdown(f"**{total_restaurants}** restaurants • **{resy_count}** Resy • **{opentable_count}** OpenTable")
+    st.markdown('<div class="logo">Reservation Hunter</div>', unsafe_allow_html=True)
 
 with col2:
-    if st.session_state.resy_authenticated:
-        st.success(f"✓ Resy: {st.session_state.resy_email}")
-    else:
-        st.info("Resy: Not connected")
+    search_query = st.text_input(
+        "Search",
+        placeholder="Search restaurants, cuisines, neighborhoods...",
+        label_visibility="collapsed"
+    )
 
 with col3:
-    if st.session_state.opentable_authenticated:
-        st.success(f"✓ OpenTable: {st.session_state.opentable_email}")
+    if st.session_state.resy_authenticated:
+        st.success(f"🟢 Resy", help=f"Logged in as {st.session_state.resy_email}")
+    elif st.session_state.opentable_authenticated:
+        st.success(f"🟢 OpenTable", help=f"Logged in as {st.session_state.opentable_email}")
     else:
-        st.info("OpenTable: Not connected")
+        st.info("Not logged in")
 
 st.markdown("---")
 
-# Main tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🔍 Browse & Book", "🎯 Hunt Cancellations", "⚙️ Manage Database", "ℹ️ Help"])
+# Main content
+if st.session_state.view_mode == 'detail' and st.session_state.selected_restaurant:
+    # Restaurant Detail View
+    restaurant = st.session_state.selected_restaurant
+    platform = restaurant.get('platform', 'resy')
 
-with tab1:
-    st.subheader("Explore Restaurants")
+    # Back button
+    if st.button("← Back to all restaurants"):
+        st.session_state.view_mode = 'browse'
+        st.session_state.selected_restaurant = None
+        st.rerun()
 
-    # Load restaurants
-    sf_restaurants = db.get("san_francisco", [])
+    # Restaurant hero section
+    st.markdown(f"""
+    <div class="detail-hero">
+        <div class="detail-title">{restaurant['name']}</div>
+        <div class="detail-meta">
+            <span>📍 {restaurant['neighborhood']}</span>
+            <span>🍽️ {restaurant['cuisine']}</span>
+            <span><span class="badge badge-{platform}">{platform.upper()}</span></span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Filter by platform
-    col_filter1, col_filter2 = st.columns([3, 1])
-    with col_filter1:
-        search_query = st.text_input("🔍 Search restaurants", placeholder="Type to search...")
-    with col_filter2:
+    # Booking interface
+    col1, col2, col3 = st.columns([1, 1, 2])
+
+    with col1:
+        party_size = st.number_input("Party Size", min_value=1, max_value=20, value=2)
+
+    with col2:
+        reservation_date = st.date_input(
+            "Date",
+            min_value=date.today(),
+            value=date.today() + timedelta(days=7)
+        )
+
+    # Check if authenticated for this platform
+    is_authenticated = (
+        (platform == "resy" and st.session_state.resy_authenticated) or
+        (platform == "opentable" and st.session_state.opentable_authenticated)
+    )
+
+    if not is_authenticated:
+        st.warning(f"Please login to {platform.title()} to see available times")
+
+        with st.expander("🔐 Login", expanded=True):
+            with st.form(f"login_{platform}"):
+                email = st.text_input("Email")
+                password = st.text_input("Password", type="password")
+
+                if st.form_submit_button("Login", use_container_width=True):
+                    if email and password:
+                        if platform == "resy":
+                            success, msg = authenticate_resy(email, password)
+                        else:
+                            success, msg = authenticate_opentable(email, password)
+
+                        if success:
+                            st.success(msg)
+                            st.rerun()
+                        else:
+                            st.error(msg)
+    else:
+        # Check availability
+        with st.spinner("Checking availability..."):
+            slots, error = check_availability(
+                restaurant['venue_id'],
+                party_size,
+                reservation_date,
+                platform
+            )
+
+        if error:
+            st.error(error)
+        elif slots:
+            st.markdown("### Available Times")
+            st.markdown('<div class="slots-container">', unsafe_allow_html=True)
+
+            # Display time slots
+            cols = st.columns(6)
+            for idx, slot in enumerate(slots):
+                col_idx = idx % 6
+                with cols[col_idx]:
+                    time_str = slot.get('display_time', slot.get('time', 'Unknown'))
+                    if st.button(time_str, key=f"slot_{idx}", use_container_width=True):
+                        st.success(f"Selected {time_str}")
+                        st.info("Booking functionality coming soon!")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.warning("No availability for this date. Try another date or party size.")
+
+else:
+    # Browse View
+    db = load_restaurants()
+    restaurants = db.get("san_francisco", [])
+
+    # Filters
+    st.markdown("### Explore Restaurants")
+
+    col1, col2, col3 = st.columns([2, 1, 1])
+
+    with col1:
+        cuisines = get_cuisines()
+        cuisine_filter = st.selectbox("Cuisine", ["All Cuisines"] + cuisines)
+
+    with col2:
         platform_filter = st.selectbox("Platform", ["All", "Resy", "OpenTable"])
 
+    with col3:
+        sort_by = st.selectbox("Sort by", ["Name (A-Z)", "Neighborhood", "Cuisine"])
+
     # Filter restaurants
-    filtered_restaurants = sf_restaurants
+    filtered = restaurants
+
     if search_query:
-        filtered_restaurants = [r for r in filtered_restaurants
-                               if search_query.lower() in r["name"].lower() or
-                               search_query.lower() in r["neighborhood"].lower() or
-                               search_query.lower() in r["cuisine"].lower()]
+        filtered = [r for r in filtered if
+                   search_query.lower() in r['name'].lower() or
+                   search_query.lower() in r.get('cuisine', '').lower() or
+                   search_query.lower() in r.get('neighborhood', '').lower()]
+
+    if cuisine_filter != "All Cuisines":
+        filtered = [r for r in filtered if r.get('cuisine') == cuisine_filter]
 
     if platform_filter != "All":
-        filtered_restaurants = [r for r in filtered_restaurants
-                               if r.get("platform", "resy").lower() == platform_filter.lower()]
+        filtered = [r for r in filtered if r.get('platform', 'resy').lower() == platform_filter.lower()]
 
-    st.write(f"Showing {len(filtered_restaurants)} restaurant(s)")
+    # Sort
+    if sort_by == "Name (A-Z)":
+        filtered = sorted(filtered, key=lambda x: x['name'])
+    elif sort_by == "Neighborhood":
+        filtered = sorted(filtered, key=lambda x: x.get('neighborhood', ''))
+    elif sort_by == "Cuisine":
+        filtered = sorted(filtered, key=lambda x: x.get('cuisine', ''))
 
-    # Display restaurants in grid
-    if filtered_restaurants:
-        for idx, restaurant in enumerate(filtered_restaurants):
+    st.markdown(f"**{len(filtered)} restaurants**")
+    st.markdown("---")
+
+    # Display restaurants
+    if filtered:
+        for restaurant in filtered:
             platform = restaurant.get('platform', 'resy')
-            platform_badge = f'<span class="badge-{platform}">{platform.upper()}</span>'
 
-            with st.expander(f"**{restaurant['name']}** {platform_badge}", expanded=False):
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Neighborhood", restaurant['neighborhood'])
-                with col2:
-                    st.metric("Cuisine", restaurant['cuisine'])
-                with col3:
-                    st.metric("Venue ID", restaurant['venue_id'])
+            # Restaurant card
+            with st.container():
+                st.markdown(f"""
+                <div class="restaurant-card">
+                    <div class="restaurant-header">
+                        <h3 class="restaurant-name">{restaurant['name']}</h3>
+                        <div class="restaurant-meta">
+                            <span>📍 {restaurant['neighborhood']}</span>
+                            <span>•</span>
+                            <span>🍽️ {restaurant['cuisine']}</span>
+                            <span>•</span>
+                            <span class="badge badge-{platform}">{platform.upper()}</span>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-                st.markdown("---")
-
-                # Booking interface
-                col1, col2 = st.columns(2)
-
-                with col1:
-                    party_size = st.number_input(
-                        "Party Size",
-                        min_value=1,
-                        max_value=20,
-                        value=2,
-                        key=f"browse_party_{idx}_{restaurant['venue_id']}"
-                    )
-
-                    reservation_date = st.date_input(
-                        "Date",
-                        min_value=date.today(),
-                        value=date.today() + timedelta(days=7),
-                        key=f"browse_date_{idx}_{restaurant['venue_id']}"
-                    )
-
-                with col2:
-                    st.write("**Preferred Times**")
-                    times = ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-                            "20:00", "20:30", "21:00", "21:30", "22:00"]
-
-                    time_cols = st.columns(3)
-                    selected_times = []
-
-                    for i, time_slot in enumerate(times):
-                        col_idx = i % 3
-                        with time_cols[col_idx]:
-                            hour = int(time_slot.split(":")[0])
-                            minute = time_slot.split(":")[1]
-                            display_time = f"{hour if hour <= 12 else hour-12}:{minute} {'PM' if hour >= 12 else 'AM'}"
-
-                            if st.checkbox(display_time, key=f"browse_time_{idx}_{restaurant['venue_id']}_{time_slot}"):
-                                selected_times.append(time_slot)
-
-                # Check authentication status for this platform
-                is_authenticated = (
-                    (platform == "resy" and st.session_state.resy_authenticated) or
-                    (platform == "opentable" and st.session_state.opentable_authenticated)
-                )
-
-                col_btn1, col_btn2 = st.columns(2)
-
-                with col_btn1:
-                    if st.button(f"🔍 Check Availability", key=f"browse_check_{idx}_{restaurant['venue_id']}", use_container_width=True):
-                        if not is_authenticated:
-                            st.warning(f"Please login to {platform.title()} to check availability")
-                            st.session_state.login_platform = platform
-                            st.session_state.show_login_modal = True
-                        else:
-                            with st.spinner("Checking availability..."):
-                                slots = check_availability(
-                                    restaurant["venue_id"],
-                                    party_size,
-                                    reservation_date,
-                                    platform
-                                )
-
-                                if slots:
-                                    st.success(f"Found {len(slots)} available time(s)!")
-                                    for slot in slots:
-                                        st.markdown(f'<div class="slot-available">✓ {slot["display_time"]}</div>', unsafe_allow_html=True)
-                                else:
-                                    st.warning("No availability found")
-
-                with col_btn2:
-                    if st.button(f"📅 Book Now", key=f"browse_book_{idx}_{restaurant['venue_id']}", type="primary", use_container_width=True):
-                        if not is_authenticated:
-                            st.warning(f"Please login to {platform.title()} to book a reservation")
-                            st.session_state.login_platform = platform
-                            st.session_state.show_login_modal = True
-                        else:
-                            st.info("Booking functionality coming soon!")
-    else:
-        st.info("No restaurants found. Try adjusting your search or filters.")
-
-    # Login modal (shown when needed)
-    if st.session_state.show_login_modal and st.session_state.login_platform:
-        st.markdown("---")
-        st.markdown(f"### 🔐 Login to {st.session_state.login_platform.title()}")
-
-        with st.form(f"login_form_{st.session_state.login_platform}"):
-            email = st.text_input("Email", placeholder="your@email.com")
-            password = st.text_input("Password", type="password")
-
-            col1, col2 = st.columns(2)
-            with col1:
-                submit = st.form_submit_button("Login", type="primary", use_container_width=True)
-            with col2:
-                cancel = st.form_submit_button("Cancel", use_container_width=True)
-
-            if submit:
-                if email and password:
-                    with st.spinner("Authenticating..."):
-                        if st.session_state.login_platform == "resy":
-                            success, message = authenticate_resy(email, password)
-                        else:
-                            success, message = authenticate_opentable(email, password)
-
-                        if success:
-                            st.success(message)
-                            st.session_state.show_login_modal = False
-                            st.rerun()
-                        else:
-                            st.error(message)
-                else:
-                    st.error("Please enter both email and password")
-
-            if cancel:
-                st.session_state.show_login_modal = False
-                st.rerun()
-
-with tab2:
-    st.subheader("🎯 Cancellation Hunter")
-    st.info("Continuous monitoring feature - Coming soon!")
-    st.markdown("""
-    This feature will:
-    - Monitor restaurants 24/7 for cancellations
-    - Automatically book when a slot becomes available
-    - Send notifications when reservations are found
-    """)
-
-with tab3:
-    # Check admin access
-    if not st.session_state.is_admin:
-        st.warning("🔒 Admin access required to manage the database")
-
-        with st.form("admin_login"):
-            admin_pass = st.text_input("Admin Password", type="password")
-            if st.form_submit_button("Login as Admin"):
-                if admin_pass == ADMIN_PASSWORD:
-                    st.session_state.is_admin = True
-                    st.session_state.admin_password = admin_pass
-                    st.success("✓ Admin access granted")
+                if st.button(f"View availability →", key=f"view_{restaurant['venue_id']}", use_container_width=True):
+                    st.session_state.selected_restaurant = restaurant
+                    st.session_state.view_mode = 'detail'
                     st.rerun()
-                else:
-                    st.error("Incorrect password")
+
+                st.markdown("<br>", unsafe_allow_html=True)
     else:
-        st.success("✓ Admin access active")
-
-        if st.button("Logout from Admin"):
-            st.session_state.is_admin = False
-            st.session_state.admin_password = None
-            st.rerun()
-
-        st.markdown("---")
-
-        manage_tab1, manage_tab2 = st.tabs(["➕ Add Restaurant", "✏️ Edit/Delete"])
-
-        with manage_tab1:
-            with st.form("add_restaurant"):
-                st.markdown("**Add a new restaurant**")
-
-                col1, col2 = st.columns(2)
-                with col1:
-                    new_name = st.text_input("Restaurant Name", placeholder="e.g., The Happy Crane")
-                    new_neighborhood = st.text_input("Neighborhood", placeholder="e.g., Hayes Valley")
-                with col2:
-                    new_venue_id = st.number_input("Venue ID", min_value=1, step=1)
-                    new_cuisine = st.text_input("Cuisine", placeholder="e.g., Chinese")
-
-                new_platform = st.selectbox("Platform", options=["resy", "opentable"])
-
-                if st.form_submit_button("Add Restaurant", type="primary"):
-                    if new_name and new_venue_id and new_neighborhood and new_cuisine:
-                        success, message = add_new_restaurant(
-                            new_name, new_venue_id, new_neighborhood, new_cuisine, new_platform
-                        )
-                        if success:
-                            st.success(message)
-                            st.rerun()
-                        else:
-                            st.error(message)
-                    else:
-                        st.error("Please fill in all fields")
-
-        with manage_tab2:
-            db = load_restaurants()
-            sf_restaurants_edit = db.get("san_francisco", [])
-
-            if sf_restaurants_edit:
-                restaurant_options = [""] + [
-                    f"{r['name']} (ID: {r['venue_id']})"
-                    for r in sf_restaurants_edit
-                ]
-
-                selected_option = st.selectbox("Select restaurant", restaurant_options)
-
-                if selected_option:
-                    selected_name = selected_option.split(" (ID:")[0]
-                    selected_restaurant = next(
-                        (r for r in sf_restaurants_edit if r["name"] == selected_name), None
-                    )
-
-                    if selected_restaurant:
-                        with st.form("edit_restaurant"):
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                edit_name = st.text_input("Name", value=selected_restaurant['name'])
-                                edit_neighborhood = st.text_input("Neighborhood", value=selected_restaurant['neighborhood'])
-                            with col2:
-                                edit_venue_id = st.number_input("Venue ID", value=selected_restaurant['venue_id'], min_value=1, step=1)
-                                edit_cuisine = st.text_input("Cuisine", value=selected_restaurant['cuisine'])
-
-                            edit_platform = st.selectbox(
-                                "Platform",
-                                options=["resy", "opentable"],
-                                index=0 if selected_restaurant.get('platform', 'resy') == 'resy' else 1
-                            )
-
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                update_btn = st.form_submit_button("💾 Update", type="primary", use_container_width=True)
-                            with col2:
-                                delete_btn = st.form_submit_button("🗑️ Delete", type="secondary", use_container_width=True)
-
-                            if update_btn:
-                                success, message = update_restaurant(
-                                    selected_restaurant['venue_id'],
-                                    edit_name,
-                                    edit_venue_id,
-                                    edit_neighborhood,
-                                    edit_cuisine,
-                                    edit_platform
-                                )
-                                if success:
-                                    st.success(message)
-                                    st.rerun()
-                                else:
-                                    st.error(message)
-
-                            if delete_btn:
-                                success, message = delete_restaurant(selected_restaurant['venue_id'])
-                                if success:
-                                    st.success(message)
-                                    st.rerun()
-                                else:
-                                    st.error(message)
-            else:
-                st.info("No restaurants in database yet")
-
-with tab4:
-    st.markdown("""
-    ## 🍽️ Welcome to TableHunter
-
-    Your intelligent assistant for booking reservations on Resy and OpenTable.
-
-    ### ✨ Features
-
-    - **Browse First**: Explore restaurants without logging in
-    - **Platform-Specific Login**: Only login when you're ready to book
-    - **Multi-Platform**: Support for both Resy and OpenTable
-    - **Real-Time Availability**: Check what's available before booking
-    - **Smart Filtering**: Search by name, neighborhood, or cuisine
-    - **Admin Control**: Secure access for database management
-
-    ### 🚀 How to Use
-
-    1. **Browse Restaurants**: No login required! Explore all available restaurants
-    2. **Select Your Restaurant**: Filter by platform, search by name
-    3. **Check Availability**: Login to see available times
-    4. **Book**: Complete your reservation in seconds
-
-    ### 🔐 Platform-Specific Authentication
-
-    TableHunter is smart about authentication:
-    - Selecting a **Resy** restaurant? You'll be prompted for Resy credentials
-    - Selecting an **OpenTable** restaurant? You'll login to OpenTable
-    - No unnecessary logins - only authenticate when needed!
-
-    ### 👨‍💼 Admin Access
-
-    Admin features allow you to:
-    - Add new restaurants to the database
-    - Edit restaurant details and venue IDs
-    - Delete restaurants
-    - Manage both Resy and OpenTable listings
-
-    **Default admin password**: `admin123` (change this in production!)
-
-    ### 💡 Tips
-
-    - Check availability before booking to see all options
-    - Select multiple time preferences for better success rates
-    - Admin access is password-protected for security
-    - Platform badges show which service each restaurant uses
-
-    ### 🔮 Coming Soon
-
-    - Automatic cancellation hunting
-    - Email/SMS notifications
-    - Calendar integration
-    - Favorite restaurants
-    - Booking history
-    """)
+        st.markdown("""
+        <div class="no-results">
+            <div class="no-results-icon">🔍</div>
+            <h3>No restaurants found</h3>
+            <p>Try adjusting your search or filters</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
 st.markdown(
-    "<div style='text-align: center; color: #9ca3af; font-size: 0.9rem;'>🍽️ TableHunter • Powered by Resy & OpenTable • Made with ❤️ in SF</div>",
+    "<div style='text-align: center; color: #999; font-size: 0.9rem; padding: 2rem 0;'>Reservation Hunter • San Francisco</div>",
     unsafe_allow_html=True
 )
