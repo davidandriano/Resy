@@ -311,6 +311,95 @@ st.markdown("""
         color: #555;
         line-height: 1.6;
     }
+
+    /* Availability Calendar */
+    .availability-calendar {
+        background: #fafafa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+
+    .calendar-header {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #1a1a1a;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-day {
+        text-align: center;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-day-header {
+        font-weight: 700;
+        color: #767676;
+        font-size: 0.75rem;
+        padding: 0.5rem;
+    }
+
+    .calendar-day-available {
+        background: #e8f5e9;
+        border: 1.5px solid #4caf50;
+        color: #2e7d32;
+        cursor: pointer;
+    }
+
+    .calendar-day-available:hover {
+        background: #c8e6c9;
+        transform: translateY(-2px);
+    }
+
+    .calendar-day-unavailable {
+        background: #ffebee;
+        border: 1.5px solid #f44336;
+        color: #c62828;
+    }
+
+    .calendar-day-closed {
+        background: #f5f5f5;
+        border: 1.5px solid #e0e0e0;
+        color: #9e9e9e;
+        text-decoration: line-through;
+    }
+
+    .calendar-day-checking {
+        background: white;
+        border: 1.5px dashed #e5e5e5;
+        color: #767676;
+    }
+
+    .calendar-legend {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        font-size: 0.85rem;
+        margin-top: 1rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .legend-box {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 1.5px solid;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -452,6 +541,93 @@ def is_restaurant_open(restaurant, check_date):
 
     return not day_hours.get('closed', False)
 
+def generate_availability_calendar(restaurant, party_size, platform, start_date=None, num_days=14):
+    """
+    Generate HTML for availability calendar with color coding
+
+    Args:
+        restaurant: Restaurant data dict
+        party_size: Number of people
+        platform: 'resy' or 'opentable'
+        start_date: Start date (defaults to today)
+        num_days: Number of days to show
+
+    Returns:
+        Tuple of (html_string, availability_data)
+    """
+    if start_date is None:
+        start_date = date.today()
+
+    # Build calendar HTML
+    html = '<div class="availability-calendar">'
+    html += '<div class="calendar-header">Availability Calendar (Next 2 Weeks)</div>'
+    html += '<div class="calendar-grid">'
+
+    # Day headers
+    day_headers = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    for day_header in day_headers:
+        html += f'<div class="calendar-day calendar-day-header">{day_header}</div>'
+
+    # Find the first Monday to start the calendar
+    days_to_subtract = start_date.weekday()  # 0 = Monday, 6 = Sunday
+    calendar_start = start_date - timedelta(days=days_to_subtract)
+
+    # Generate calendar days
+    availability_data = {}
+    current_date = calendar_start
+    days_shown = 0
+
+    # Show enough weeks to cover num_days
+    total_days_to_show = ((num_days + days_to_subtract) // 7 + 1) * 7
+
+    for i in range(total_days_to_show):
+        current_date = calendar_start + timedelta(days=i)
+
+        # Check if this date is in the future or today
+        is_past = current_date < start_date
+        is_open = is_restaurant_open(restaurant, current_date)
+
+        # Format date for display
+        day_num = current_date.day
+        month_str = current_date.strftime('%b') if current_date.day == 1 or i == 0 else ''
+        display_text = f"{month_str} {day_num}" if month_str else str(day_num)
+
+        if is_past:
+            # Past dates - show as disabled
+            html += f'<div class="calendar-day calendar-day-closed">{display_text}</div>'
+        elif not is_open:
+            # Restaurant closed
+            html += f'<div class="calendar-day calendar-day-closed" title="Closed">{display_text}</div>'
+            availability_data[current_date] = 'closed'
+        else:
+            # Will check availability (shows as "checking" initially)
+            html += f'<div class="calendar-day calendar-day-checking" title="Click to check">{display_text}</div>'
+            availability_data[current_date] = 'checking'
+
+    html += '</div>'
+
+    # Legend
+    html += '''
+    <div class="calendar-legend">
+        <div class="legend-item">
+            <div class="legend-box" style="background: #e8f5e9; border-color: #4caf50;"></div>
+            <span>Available</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #ffebee; border-color: #f44336;"></div>
+            <span>No Availability</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #f5f5f5; border-color: #e0e0e0;"></div>
+            <span>Closed</span>
+        </div>
+    </div>
+    '''
+
+    html += '</div>'
+
+    return html, availability_data
+
 # Custom Header
 col1, col2, col3 = st.columns([1, 3, 1])
 
@@ -578,6 +754,12 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             min_value=date.today(),
             value=date.today() + timedelta(days=7)
         )
+
+    # Display availability calendar
+    calendar_html, availability_data = generate_availability_calendar(
+        restaurant, party_size, platform
+    )
+    st.markdown(calendar_html, unsafe_allow_html=True)
 
     # Check if authenticated for this platform
     is_authenticated = (
