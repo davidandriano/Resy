@@ -8,6 +8,8 @@ from config import ReservationConfig, load_settings
 import json
 import os
 import time
+import re
+import dateparser
 from google_places import GooglePlacesClient, get_restaurant_google_data, search_restaurant_place_id
 
 # Configure page
@@ -604,6 +606,129 @@ def format_reservation_release_info(release_info):
 
     return f"Reservations released {days} days in advance at {time_12}"
 
+def parse_reservation_request(text):
+    """
+    Parse natural language reservation request
+
+    Returns: dict with 'dates', 'times', 'party_size'
+    """
+    result = {
+        'dates': [],
+        'times': [],
+        'party_size': 2
+    }
+
+    text_lower = text.lower()
+
+    # Extract party size
+    party_patterns = [
+        r'table\s+for\s+(\d+)',
+        r'(\d+)\s+people',
+        r'(\d+)\s+guests',
+        r'party\s+of\s+(\d+)'
+    ]
+    for pattern in party_patterns:
+        match = re.search(pattern, text_lower)
+        if match:
+            result['party_size'] = int(match.group(1))
+            break
+
+    # Extract times
+    time_patterns = [
+        r'(\d{1,2}):?(\d{2})?\s*(am|pm)',
+        r'(\d{1,2})\s*(am|pm)',
+    ]
+    times_found = []
+    for pattern in time_patterns:
+        matches = re.finditer(pattern, text_lower)
+        for match in matches:
+            hour = int(match.group(1))
+            minute = int(match.group(2)) if match.group(2) else 0
+            period = match.group(3) if len(match.groups()) >= 3 else match.group(2)
+
+            if period == 'pm' and hour != 12:
+                hour += 12
+            elif period == 'am' and hour == 12:
+                hour = 0
+
+            times_found.append(f"{hour:02d}:{minute:02d}")
+
+    # If time range specified (e.g., "7pm - 8:30pm" or "between 7pm and 8:30pm")
+    if ' - ' in text_lower or 'between' in text_lower:
+        if len(times_found) >= 2:
+            # Generate 30-minute intervals between times
+            start_time = times_found[0]
+            end_time = times_found[-1]
+            start_hour, start_min = map(int, start_time.split(':'))
+            end_hour, end_min = map(int, end_time.split(':'))
+
+            current = start_hour * 60 + start_min
+            end = end_hour * 60 + end_min
+
+            while current <= end:
+                h = current // 60
+                m = current % 60
+                result['times'].append(f"{h:02d}:{m:02d}")
+                current += 30
+        else:
+            result['times'] = times_found
+    else:
+        result['times'] = times_found
+
+    # Extract dates using dateparser
+    # Look for date-related phrases
+    date_phrases = []
+
+    # Check for day of week patterns
+    days_of_week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    for day in days_of_week:
+        if day in text_lower:
+            date_phrases.append(day)
+
+    # Check for specific date patterns
+    month_pattern = r'(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}'
+    month_matches = re.findall(month_pattern, text_lower)
+    date_phrases.extend(month_matches)
+
+    # Check for "any Saturday in November" type patterns
+    any_day_month_pattern = r'any\s+(\w+)\s+in\s+(\w+)'
+    match = re.search(any_day_month_pattern, text_lower)
+    if match:
+        day_name = match.group(1)
+        month_name = match.group(2)
+
+        # Parse the month
+        month_date = dateparser.parse(f"{month_name} 1, {datetime.now().year}")
+        if month_date:
+            # If month is in the past, use next year
+            if month_date.month < datetime.now().month:
+                month_date = month_date.replace(year=datetime.now().year + 1)
+
+            # Find all occurrences of the day in that month
+            current = month_date.replace(day=1)
+            while current.month == month_date.month:
+                if current.strftime('%A').lower() == day_name:
+                    result['dates'].append(current.date())
+                current += timedelta(days=1)
+    else:
+        # Parse other date phrases
+        for phrase in date_phrases:
+            parsed = dateparser.parse(phrase, settings={'PREFER_DATES_FROM': 'future'})
+            if parsed:
+                result['dates'].append(parsed.date())
+
+    # If no specific dates found, try parsing the whole text
+    if not result['dates']:
+        parsed = dateparser.parse(text, settings={'PREFER_DATES_FROM': 'future'})
+        if parsed:
+            result['dates'].append(parsed.date())
+
+    # Default to 7:00 PM, 7:30 PM, 8:00 PM if no times specified
+    if not result['times']:
+        result['times'] = ['19:00', '19:30', '20:00']
+
+    return result
+
 def is_restaurant_open(restaurant, check_date):
     """Check if restaurant is open on a given date"""
     if not restaurant.get('hours'):
@@ -888,9 +1013,16 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
     google_data = None
 
     # Get API key from Streamlit secrets or environment variable
+    api_key = None
     try:
-        api_key = st.secrets.get("GOOGLE_PLACES_API_KEY", os.getenv('GOOGLE_PLACES_API_KEY'))
-    except:
+        # Try Streamlit secrets first
+        if "GOOGLE_PLACES_API_KEY" in st.secrets:
+            api_key = st.secrets["GOOGLE_PLACES_API_KEY"]
+    except Exception as e:
+        pass
+
+    # Fall back to environment variable
+    if not api_key:
         api_key = os.getenv('GOOGLE_PLACES_API_KEY')
 
     # Try to get Google data
@@ -1110,20 +1242,36 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
 
             if st.button("🚀 Activate Table Hunter", type="primary", use_container_width=True, key="start_hunter_chatbot"):
                 if hunter_request:
-                    # Parse the request (simple version - can be enhanced with NLP)
-                    hunt_id = f"{restaurant['venue_id']}_{reservation_date}_{int(time.time())}"
-                    st.session_state.active_hunters[hunt_id] = {
-                        'restaurant': restaurant,
-                        'date': reservation_date,
-                        'times': ["19:00", "19:30", "20:00"],  # Default times, can be parsed from text
-                        'party_size': party_size,
-                        'platform': platform,
-                        'started': datetime.now(),
-                        'checks': 0,
-                        'interval': "Every 1 minute",
-                        'user_request': hunter_request
-                    }
-                    st.success("🎯 Table Hunter activated! I'll monitor for cancellations and notify you when a table becomes available.")
+                    # Parse the natural language request
+                    parsed = parse_reservation_request(hunter_request)
+
+                    # Create hunters for each date found
+                    hunters_created = 0
+                    dates_to_hunt = parsed['dates'] if parsed['dates'] else [reservation_date]
+
+                    for hunt_date in dates_to_hunt[:5]:  # Limit to 5 dates to avoid too many hunters
+                        hunt_id = f"{restaurant['venue_id']}_{hunt_date}_{int(time.time())}_{hunters_created}"
+                        st.session_state.active_hunters[hunt_id] = {
+                            'restaurant': restaurant,
+                            'date': hunt_date,
+                            'times': parsed['times'],
+                            'party_size': parsed['party_size'],
+                            'platform': platform,
+                            'started': datetime.now(),
+                            'checks': 0,
+                            'interval': "Every 1 minute",
+                            'user_request': hunter_request
+                        }
+                        hunters_created += 1
+
+                    # Show what was parsed
+                    dates_str = ", ".join([d.strftime('%b %d') for d in dates_to_hunt[:5]])
+                    times_str = ", ".join([convert_to_12hour(t) for t in parsed['times'][:3]])
+                    if len(parsed['times']) > 3:
+                        times_str += f" +{len(parsed['times'])-3} more"
+
+                    st.success(f"🎯 Table Hunter activated for {parsed['party_size']} guests!")
+                    st.info(f"**Hunting on:** {dates_str}\n\n**Times:** {times_str}")
                     st.info("💡 Tip: Keep this page open or check back periodically for updates.")
                     st.rerun()
                 else:
