@@ -10,6 +10,9 @@ import os
 import time
 import re
 import dateparser
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from google_places import GooglePlacesClient, get_restaurant_google_data, search_restaurant_place_id
 
 # Configure page
@@ -729,6 +732,55 @@ def parse_reservation_request(text):
 
     return result
 
+def send_notification(to_email, subject, message):
+    """
+    Send email notification using SMTP
+
+    Free options:
+    1. Gmail SMTP (gmail.com) - 500 emails/day
+       - SMTP Server: smtp.gmail.com
+       - Port: 587
+       - Requires app password (not regular password)
+
+    2. Outlook/Hotmail SMTP - Free
+       - SMTP Server: smtp-mail.outlook.com
+       - Port: 587
+
+    To use: Add to .streamlit/secrets.toml:
+        NOTIFICATION_EMAIL = "your-email@gmail.com"
+        NOTIFICATION_PASSWORD = "your-app-password"
+        SMTP_SERVER = "smtp.gmail.com"
+        SMTP_PORT = 587
+    """
+    try:
+        # Get SMTP settings from secrets or env
+        smtp_server = st.secrets.get("SMTP_SERVER", os.getenv("SMTP_SERVER", "smtp.gmail.com"))
+        smtp_port = int(st.secrets.get("SMTP_PORT", os.getenv("SMTP_PORT", 587)))
+        sender_email = st.secrets.get("NOTIFICATION_EMAIL", os.getenv("NOTIFICATION_EMAIL"))
+        sender_password = st.secrets.get("NOTIFICATION_PASSWORD", os.getenv("NOTIFICATION_PASSWORD"))
+
+        if not sender_email or not sender_password:
+            return False  # Notifications not configured
+
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(message, 'html'))
+
+        # Send email
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+
+        return True
+    except Exception as e:
+        print(f"Notification error: {e}")
+        return False
+
 def is_restaurant_open(restaurant, check_date):
     """Check if restaurant is open on a given date"""
     if not restaurant.get('hours'):
@@ -773,14 +825,29 @@ def run_active_hunters():
                     slot_time = slot.get('time', slot.get('display_time', ''))
                     if any(pref_time in slot_time for pref_time in hunt['times']):
                         # Match found! Notify user
-                        st.session_state.hunt_results.append({
+                        result = {
                             'restaurant': hunt['restaurant']['name'],
                             'date': hunt['date'],
                             'time': slot_time,
                             'party_size': hunt['party_size'],
                             'found_at': datetime.now(),
                             'slot_data': slot
-                        })
+                        }
+                        st.session_state.hunt_results.append(result)
+
+                        # Send email notification if configured
+                        user_email = st.session_state.get('notification_email')
+                        if user_email:
+                            subject = f"🎯 Table Found at {hunt['restaurant']['name']}!"
+                            message = f"""
+                            <h2>Great news! We found a table for you!</h2>
+                            <p><strong>Restaurant:</strong> {hunt['restaurant']['name']}</p>
+                            <p><strong>Date:</strong> {hunt['date'].strftime('%B %d, %Y')}</p>
+                            <p><strong>Time:</strong> {slot_time}</p>
+                            <p><strong>Party Size:</strong> {hunt['party_size']}</p>
+                            <p>Log into Table Hunter to complete your reservation!</p>
+                            """
+                            send_notification(user_email, subject, message)
 
                         # Remove hunter after finding a slot
                         del st.session_state.active_hunters[hunt_id]
