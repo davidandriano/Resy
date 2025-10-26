@@ -140,7 +140,7 @@ def check_availability(venue_id, party_size, reservation_date):
         st.error(f"Error checking availability: {str(e)}")
         return []
 
-def add_new_restaurant(name, venue_id, neighborhood, cuisine):
+def add_new_restaurant(name, venue_id, neighborhood, cuisine, platform="resy"):
     """Add a new restaurant to the database"""
     db = load_restaurants()
 
@@ -153,7 +153,8 @@ def add_new_restaurant(name, venue_id, neighborhood, cuisine):
         "name": name,
         "venue_id": venue_id,
         "neighborhood": neighborhood,
-        "cuisine": cuisine
+        "cuisine": cuisine,
+        "platform": platform
     }
 
     db["san_francisco"].append(new_restaurant)
@@ -164,7 +165,7 @@ def add_new_restaurant(name, venue_id, neighborhood, cuisine):
 
     return True, f"Added {name} to database!"
 
-def update_restaurant(old_venue_id, name, new_venue_id, neighborhood, cuisine):
+def update_restaurant(old_venue_id, name, new_venue_id, neighborhood, cuisine, platform="resy"):
     """Update an existing restaurant in the database"""
     db = load_restaurants()
 
@@ -183,7 +184,8 @@ def update_restaurant(old_venue_id, name, new_venue_id, neighborhood, cuisine):
                 "name": name,
                 "venue_id": new_venue_id,
                 "neighborhood": neighborhood,
-                "cuisine": cuisine
+                "cuisine": cuisine,
+                "platform": platform
             }
             restaurant_found = True
             break
@@ -360,9 +362,9 @@ else:
         db = load_restaurants()
         sf_restaurants = db.get("san_francisco", [])
 
-        # Create searchable list
+        # Create searchable list with platform badges
         restaurant_options = [""] + [
-            f"{r['name']} - {r['neighborhood']} ({r['cuisine']})"
+            f"{r['name']} - {r['neighborhood']} ({r['cuisine']}) [{r.get('platform', 'resy').upper()}]"
             for r in sf_restaurants
         ]
 
@@ -622,9 +624,9 @@ else:
             db = load_restaurants()
             sf_restaurants = db.get("san_francisco", [])
 
-            # Create searchable list
+            # Create searchable list with platform badges
             restaurant_options = [""] + [
-                f"{r['name']} - {r['neighborhood']} ({r['cuisine']})"
+                f"{r['name']} - {r['neighborhood']} ({r['cuisine']}) [{r.get('platform', 'resy').upper()}]"
                 for r in sf_restaurants
             ]
 
@@ -817,6 +819,11 @@ else:
                 new_venue_id = st.number_input("Venue ID", min_value=1, step=1)
                 new_neighborhood = st.text_input("Neighborhood", placeholder="e.g., Hayes Valley")
                 new_cuisine = st.text_input("Cuisine Type", placeholder="e.g., Mediterranean")
+                new_platform = st.selectbox(
+                    "Platform",
+                    options=["resy", "opentable"],
+                    help="Which platform is this restaurant on?"
+                )
 
                 submitted = st.form_submit_button("Add Restaurant", type="primary")
 
@@ -826,7 +833,8 @@ else:
                             new_name,
                             new_venue_id,
                             new_neighborhood,
-                            new_cuisine
+                            new_cuisine,
+                            new_platform
                         )
 
                         if success:
@@ -893,6 +901,12 @@ else:
                                 "Cuisine Type",
                                 value=selected_restaurant['cuisine']
                             )
+                            edit_platform = st.selectbox(
+                                "Platform",
+                                options=["resy", "opentable"],
+                                index=0 if selected_restaurant.get('platform', 'resy') == 'resy' else 1,
+                                help="Which platform is this restaurant on?"
+                            )
 
                             col1, col2 = st.columns(2)
 
@@ -917,7 +931,8 @@ else:
                                         edit_name,
                                         edit_venue_id,  # new venue_id
                                         edit_neighborhood,
-                                        edit_cuisine
+                                        edit_cuisine,
+                                        edit_platform
                                     )
 
                                     if success:
@@ -946,9 +961,11 @@ else:
         if sf_restaurants_display:
             st.write(f"**{len(sf_restaurants_display)} restaurant(s) in database**")
             for restaurant in sf_restaurants_display:
+                platform = restaurant.get('platform', 'resy').upper()
+                platform_color = "#ff5a5f" if platform == "RESY" else "#da3743"
                 st.markdown(f"""
                 <div class="restaurant-card">
-                    <strong>{restaurant['name']}</strong><br>
+                    <strong>{restaurant['name']}</strong> <span style="background-color:{platform_color};color:white;padding:2px 6px;border-radius:3px;font-size:0.7em;">{platform}</span><br>
                     <small>{restaurant['neighborhood']} • {restaurant['cuisine']} • ID: {restaurant['venue_id']}</small>
                 </div>
                 """, unsafe_allow_html=True)
