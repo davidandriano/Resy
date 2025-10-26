@@ -1,0 +1,222 @@
+{
+  "note": "Curated list of popular SF restaurants on Resy. To find venue IDs, visit the restaurant page on resy.com and look at the URL or inspect the page source.",
+  "instructions": "You can import this list into your database, or use it as a reference to add restaurants via the 'Add Restaurant' tab in the app.",
+  "popular_restaurants": [
+    {
+      "name": "State Bird Provisions",
+      "neighborhood": "Western Addition",
+      "cuisine": "American",
+      "note": "Michelin-starred, dim sum-style American"
+    },
+    {
+      "name": "Rich Table",
+      "neighborhood": "Hayes Valley",
+      "cuisine": "American",
+      "note": "Contemporary American, Michelin-starred"
+    },
+    {
+      "name": "Nopa",
+      "neighborhood": "Western Addition",
+      "cuisine": "American",
+      "note": "Popular late-night spot"
+    },
+    {
+      "name": "Zuni Cafe",
+      "neighborhood": "Hayes Valley",
+      "cuisine": "Mediterranean",
+      "note": "SF institution, famous roast chicken"
+    },
+    {
+      "name": "Liholiho Yacht Club",
+      "neighborhood": "Nob Hill",
+      "cuisine": "Hawaiian",
+      "note": "Hawaiian-inspired, creative cocktails"
+    },
+    {
+      "name": "The Progress",
+      "neighborhood": "Western Addition",
+      "cuisine": "American",
+      "note": "Sister restaurant to State Bird"
+    },
+    {
+      "name": "Tartine Manufactory",
+      "neighborhood": "Mission",
+      "cuisine": "Bakery/Cafe",
+      "note": "Famous bakery, all-day cafe"
+    },
+    {
+      "name": "Foreign Cinema",
+      "neighborhood": "Mission",
+      "cuisine": "Mediterranean",
+      "note": "Outdoor films, California-Mediterranean"
+    },
+    {
+      "name": "SPQR",
+      "neighborhood": "Pacific Heights",
+      "cuisine": "Italian",
+      "note": "Michelin-starred Italian"
+    },
+    {
+      "name": "Swan Oyster Depot",
+      "neighborhood": "Nob Hill",
+      "cuisine": "Seafood",
+      "note": "Iconic seafood counter, no reservations usually"
+    },
+    {
+      "name": "Gary Danko",
+      "neighborhood": "Fisherman's Wharf",
+      "cuisine": "American",
+      "note": "Classic fine dining, Michelin-starred"
+    },
+    {
+      "name": "Benu",
+      "neighborhood": "SoMa",
+      "cuisine": "Asian Fusion",
+      "note": "Three Michelin stars"
+    },
+    {
+      "name": "Quince",
+      "neighborhood": "Jackson Square",
+      "cuisine": "Italian",
+      "note": "Three Michelin stars"
+    },
+    {
+      "name": "Saison",
+      "neighborhood": "SoMa",
+      "cuisine": "American",
+      "note": "Three Michelin stars, tasting menu"
+    },
+    {
+      "name": "Atelier Crenn",
+      "neighborhood": "Cow Hollow",
+      "cuisine": "French",
+      "note": "Three Michelin stars, Dominique Crenn"
+    },
+    {
+      "name": "Lazy Bear",
+      "neighborhood": "Mission",
+      "cuisine": "American",
+      "note": "Two Michelin stars, communal dining"
+    },
+    {
+      "name": "Californios",
+      "neighborhood": "Mission",
+      "cuisine": "Mexican",
+      "note": "Two Michelin stars, modern Mexican"
+    },
+    {
+      "name": "Birdsong",
+      "neighborhood": "SoMa",
+      "cuisine": "American",
+      "note": "Modern American tasting menu"
+    },
+    {
+      "name": "Octavia",
+      "neighborhood": "Pacific Heights",
+      "cuisine": "American",
+      "note": "Seasonal California cuisine"
+    },
+    {
+      "name": "Al's Place",
+      "neighborhood": "Mission",
+      "cuisine": "American",
+      "note": "Vegetable-forward, Michelin-starred"
+    },
+    {
+      "name": "Kokkari Estiatorio",
+      "neighborhood": "Financial District",
+      "cuisine": "Greek",
+      "note": "Upscale Greek"
+    },
+    {
+      "name": "Boulevard",
+      "neighborhood": "Embarcadero",
+      "cuisine": "American",
+      "note": "Classic SF fine dining"
+    },
+    {
+      "name": "Jardiniere",
+      "neighborhood": "Hayes Valley",
+      "cuisine": "French",
+      "note": "Pre-theater favorite"
+    },
+    {
+      "name": "Mourad",
+      "neighborhood": "SoMa",
+      "cuisine": "Moroccan",
+      "note": "Modern Moroccan"
+    },
+    {
+      "name": "Beretta",
+      "neighborhood": "Mission",
+      "cuisine": "Italian",
+      "note": "Pizza and cocktails"
+    },
+    {
+      "name": "Trick Dog",
+      "neighborhood": "Mission",
+      "cuisine": "American",
+      "note": "Creative cocktails, small plates"
+    },
+    {
+      "name": "Lord Stanley",
+      "neighborhood": "Polk",
+      "cuisine": "American",
+      "note": "Intimate, seasonal menu"
+    },
+    {
+      "name": "Sorrel",
+      "neighborhood": "Pacific Heights",
+      "cuisine": "Italian",
+      "note": "Neighborhood Italian"
+    },
+    {
+      "name": "Cotogna",
+      "neighborhood": "Jackson Square",
+      "cuisine": "Italian",
+      "note": "Casual sister to Quince"
+    },
+    {
+      "name": "Che Fico",
+      "neighborhood": "Nopa",
+      "cuisine": "Italian",
+      "note": "Rustic Italian"
+    },
+    {
+      "name": "Stones Throw",
+      "neighborhood": "Petrero Hill",
+      "cuisine": "American",
+      "note": "Neighborhood bistro"
+    },
+    {
+      "name": "Zazie",
+      "neighborhood": "Cole Valley",
+      "cuisine": "French",
+      "note": "Popular brunch spot"
+    },
+    {
+      "name": "Aziza",
+      "neighborhood": "Outer Richmond",
+      "cuisine": "Moroccan",
+      "note": "Michelin-starred Moroccan"
+    },
+    {
+      "name": "Chapeau!",
+      "neighborhood": "Inner Richmond",
+      "cuisine": "French",
+      "note": "Classic French bistro"
+    },
+    {
+      "name": "Greens",
+      "neighborhood": "Fort Mason",
+      "cuisine": "Vegetarian",
+      "note": "Waterfront vegetarian pioneer"
+    },
+    {
+      "name": "Nopalito",
+      "neighborhood": "Western Addition",
+      "cuisine": "Mexican",
+      "note": "Organic Mexican"
+    }
+  ]
+}

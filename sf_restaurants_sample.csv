@@ -1,0 +1,21 @@
+name,venue_id,neighborhood,cuisine
+# Sample SF restaurants - add venue IDs as you find them on Resy
+# To find venue ID: Visit restaurant page on resy.com and inspect the page source
+# The existing restaurants in your database:
+Izakaya Rintaro,339,Mission,Japanese
+State Bird Provisions,1505,Western Addition,American
+Zuni Cafe,795,Hayes Valley,Mediterranean
+Foreign Cinema,856,Mission,Mediterranean
+SPQR,1740,Pacific Heights,Italian
+Flour + Water,305,Mission,Italian
+Nopa,494,Western Addition,American
+Rich Table,3007,Hayes Valley,American
+Liholiho Yacht Club,4552,Nob Hill,Hawaiian
+The Progress,4551,Western Addition,American
+Tartine Manufactory,7982,Mission,Bakery
+Che Fico,24965,Nopa,Italian
+Lord Stanley,6906,Polk,American
+Sorrel,8540,Pacific Heights,Italian
+Cotogna,1739,Jackson Square,Italian
+# Add more restaurants below with their venue IDs as you discover them
+# Format: Name,VenueID,Neighborhood,Cuisine
