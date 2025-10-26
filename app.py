@@ -1,5 +1,5 @@
 """
-Reservation Hunter - Resy-Inspired Modern Design
+Table Hunter - Resy-Inspired Modern Design
 """
 import streamlit as st
 from datetime import date, datetime, timedelta
@@ -12,7 +12,7 @@ from google_places import GooglePlacesClient, get_restaurant_google_data, search
 
 # Configure page
 st.set_page_config(
-    page_title="Reservation Hunter",
+    page_title="Table Hunter",
     page_icon="🍽️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -408,11 +408,55 @@ def get_cuisines():
         cuisines.add(restaurant.get('cuisine', 'Unknown'))
     return sorted(list(cuisines))
 
+def convert_to_12hour(time_24):
+    """Convert 24-hour time to 12-hour format with AM/PM"""
+    try:
+        # Handle both "HH:MM" and datetime objects
+        if isinstance(time_24, str):
+            if ':' in time_24:
+                hour, minute = time_24.split(':')[:2]
+                hour = int(hour)
+                minute = int(minute)
+            else:
+                return time_24  # Return as-is if not in expected format
+        else:
+            hour = time_24.hour
+            minute = time_24.minute
+
+        period = "AM" if hour < 12 else "PM"
+        display_hour = hour if hour <= 12 else hour - 12
+        display_hour = 12 if display_hour == 0 else display_hour
+
+        return f"{display_hour}:{minute:02d} {period}"
+    except:
+        return str(time_24)
+
+def format_reservation_release_info(release_info):
+    """Format reservation release information for display"""
+    if not release_info:
+        return "Contact restaurant for reservation policy"
+
+    days = release_info.get('days_in_advance', 'N/A')
+    time_24 = release_info.get('time', '')
+    time_12 = convert_to_12hour(time_24)
+
+    return f"Reservations released {days} days in advance at {time_12}"
+
+def is_restaurant_open(restaurant, check_date):
+    """Check if restaurant is open on a given date"""
+    if not restaurant.get('hours'):
+        return True  # Assume open if no hours specified
+
+    day_name = check_date.strftime('%A').lower()
+    day_hours = restaurant['hours'].get(day_name, {})
+
+    return not day_hours.get('closed', False)
+
 # Custom Header
 col1, col2, col3 = st.columns([1, 3, 1])
 
 with col1:
-    st.markdown('<div class="logo">Reservation Hunter</div>', unsafe_allow_html=True)
+    st.markdown('<div class="logo">Table Hunter</div>', unsafe_allow_html=True)
 
 with col2:
     search_query = st.text_input(
@@ -447,14 +491,20 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
     google_place_id = restaurant.get('google_place_id')
     google_data = None
 
+    # Get API key from Streamlit secrets or environment variable
+    try:
+        api_key = st.secrets.get("GOOGLE_PLACES_API_KEY", os.getenv('GOOGLE_PLACES_API_KEY'))
+    except:
+        api_key = os.getenv('GOOGLE_PLACES_API_KEY')
+
     # Try to get Google data
     if google_place_id:
-        google_data = get_restaurant_google_data(google_place_id, os.getenv('GOOGLE_PLACES_API_KEY'))
+        google_data = get_restaurant_google_data(google_place_id, api_key)
     else:
         # Try to search for the place
-        google_place_id = search_restaurant_place_id(restaurant['name'], "San Francisco, CA", os.getenv('GOOGLE_PLACES_API_KEY'))
+        google_place_id = search_restaurant_place_id(restaurant['name'], "San Francisco, CA", api_key)
         if google_place_id:
-            google_data = get_restaurant_google_data(google_place_id, os.getenv('GOOGLE_PLACES_API_KEY'))
+            google_data = get_restaurant_google_data(google_place_id, api_key)
 
     # Display hero with Google rating if available
     google_rating = google_data.get('rating') if google_data else None
@@ -480,7 +530,7 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
         photos = google_data['photos'][:6]  # Show up to 6 photos
         cols = st.columns(3)
 
-        client = GooglePlacesClient(os.getenv('GOOGLE_PLACES_API_KEY'))
+        client = GooglePlacesClient(api_key)
         for idx, photo in enumerate(photos):
             col_idx = idx % 3
             with cols[col_idx]:
@@ -489,6 +539,32 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
                     photo_url = client.get_photo_url(photo_ref, max_width=400)
                     if photo_url:
                         st.image(photo_url, use_column_width=True)
+
+    # Restaurant Information Section
+    st.markdown("### Restaurant Information")
+
+    info_col1, info_col2 = st.columns(2)
+
+    with info_col1:
+        # Reservation release information
+        release_info = restaurant.get('reservation_release')
+        release_text = format_reservation_release_info(release_info)
+        st.info(f"📅 **Reservation Policy**\n\n{release_text}")
+
+    with info_col2:
+        # Restaurant hours
+        hours = restaurant.get('hours', {})
+        if hours:
+            st.info("🕒 **Hours**")
+            for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+                day_hours = hours.get(day, {})
+                day_display = day.capitalize()[:3]
+                if day_hours.get('closed'):
+                    st.caption(f"**{day_display}**: Closed")
+                else:
+                    open_time = convert_to_12hour(day_hours.get('open', ''))
+                    close_time = convert_to_12hour(day_hours.get('close', ''))
+                    st.caption(f"**{day_display}**: {open_time} - {close_time}")
 
     # Booking interface
     col1, col2, col3 = st.columns([1, 1, 2])
@@ -551,8 +627,10 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
                 col_idx = idx % 6
                 with cols[col_idx]:
                     time_str = slot.get('display_time', slot.get('time', 'Unknown'))
-                    if st.button(time_str, key=f"slot_{idx}", use_container_width=True):
-                        st.success(f"Selected {time_str}")
+                    # Convert to 12-hour format
+                    time_12hr = convert_to_12hour(time_str)
+                    if st.button(time_12hr, key=f"slot_{idx}", use_container_width=True):
+                        st.success(f"Selected {time_12hr}")
                         st.info("Booking functionality coming soon!")
 
             st.markdown('</div>', unsafe_allow_html=True)
@@ -671,6 +749,6 @@ else:
 # Footer
 st.markdown("---")
 st.markdown(
-    "<div style='text-align: center; color: #999; font-size: 0.9rem; padding: 2rem 0;'>Reservation Hunter • San Francisco</div>",
+    "<div style='text-align: center; color: #999; font-size: 0.9rem; padding: 2rem 0;'>Table Hunter • San Francisco</div>",
     unsafe_allow_html=True
 )
