@@ -653,14 +653,16 @@ else:
                         min_value=1,
                         max_value=20,
                         value=2,
-                        help="Number of people"
+                        help="Number of people",
+                        key="monitor_party_size"
                     )
 
                     reservation_date = st.date_input(
                         "Reservation Date",
                         min_value=date.today(),
                         value=date.today() + timedelta(days=7),
-                        help="Date for your reservation"
+                        help="Date for your reservation",
+                        key="monitor_reservation_date"
                     )
 
                     check_interval = st.number_input(
@@ -668,7 +670,8 @@ else:
                         min_value=3,
                         max_value=60,
                         value=5,
-                        help="How often to check (5 seconds recommended for cancellation hunting)"
+                        help="How often to check (5 seconds recommended for cancellation hunting)",
+                        key="monitor_check_interval"
                     )
 
                 with col2:
@@ -696,7 +699,8 @@ else:
                     auto_accept = st.checkbox(
                         "Accept any available time",
                         value=True,
-                        help="Recommended: Book any time if preferred times are unavailable"
+                        help="Recommended: Book any time if preferred times are unavailable",
+                        key="monitor_auto_accept"
                     )
 
                 st.divider()
@@ -704,7 +708,8 @@ else:
                 # Scheduled start option
                 use_scheduled_start = st.checkbox(
                     "⏰ Schedule Start Time",
-                    help="Start monitoring at a specific time (e.g., midnight when reservations release)"
+                    help="Start monitoring at a specific time (e.g., midnight when reservations release)",
+                    key="monitor_use_scheduled_start"
                 )
 
                 scheduled_time_input = None
@@ -715,13 +720,15 @@ else:
                             "Start Date",
                             value=date.today(),
                             min_value=date.today(),
-                            help="Date to start monitoring"
+                            help="Date to start monitoring",
+                            key="monitor_scheduled_date"
                         )
                     with col_b:
                         scheduled_time = st.time_input(
                             "Start Time",
                             value=datetime.strptime("00:00", "%H:%M").time(),
-                            help="Time to start monitoring (e.g., 00:00 for midnight)"
+                            help="Time to start monitoring (e.g., 00:00 for midnight)",
+                            key="monitor_scheduled_time"
                         )
 
                     scheduled_time_input = datetime.combine(scheduled_date, scheduled_time)
