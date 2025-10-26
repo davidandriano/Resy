@@ -638,23 +638,31 @@ def parse_reservation_request(text):
 
     # Extract times
     time_patterns = [
-        r'(\d{1,2}):?(\d{2})?\s*(am|pm)',
-        r'(\d{1,2})\s*(am|pm)',
+        r'(\d{1,2}):(\d{2})\s*(am|pm)',  # 7:30pm
+        r'(\d{1,2})\s*(am|pm)',          # 7pm
     ]
     times_found = []
     for pattern in time_patterns:
         matches = re.finditer(pattern, text_lower)
         for match in matches:
             hour = int(match.group(1))
-            minute = int(match.group(2)) if match.group(2) else 0
-            period = match.group(3) if len(match.groups()) >= 3 else match.group(2)
+
+            # Check if this pattern has minutes (group 2 is digits) or am/pm (group 2 is am/pm)
+            if len(match.groups()) == 3:  # Pattern with minutes: hour:minute am/pm
+                minute = int(match.group(2))
+                period = match.group(3)
+            else:  # Pattern without minutes: hour am/pm
+                minute = 0
+                period = match.group(2)
 
             if period == 'pm' and hour != 12:
                 hour += 12
             elif period == 'am' and hour == 12:
                 hour = 0
 
-            times_found.append(f"{hour:02d}:{minute:02d}")
+            time_24 = f"{hour:02d}:{minute:02d}"
+            if time_24 not in times_found:  # Avoid duplicates
+                times_found.append(time_24)
 
     # If time range specified (e.g., "7pm - 8:30pm" or "between 7pm and 8:30pm")
     if ' - ' in text_lower or 'between' in text_lower:
@@ -1081,21 +1089,36 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
 
     # Get API key from Streamlit secrets or environment variable
     api_key = None
+    api_key_source = None
     try:
         # Try Streamlit secrets first
         if "GOOGLE_PLACES_API_KEY" in st.secrets:
             api_key = st.secrets["GOOGLE_PLACES_API_KEY"]
+            api_key_source = "Streamlit Secrets"
     except Exception as e:
         pass
 
     # Fall back to environment variable
     if not api_key:
         api_key = os.getenv('GOOGLE_PLACES_API_KEY')
+        if api_key:
+            api_key_source = "Environment Variable"
+
+    # Debug section (remove after fixing)
+    with st.expander("🔍 Google API Debug Info", expanded=False):
+        if api_key:
+            st.success(f"✅ API Key found from: {api_key_source}")
+            st.code(f"Key starts with: {api_key[:20]}...")
+        else:
+            st.error("❌ No API key found")
+            st.info("Add to .streamlit/secrets.toml:\nGOOGLE_PLACES_API_KEY = \"your-key-here\"")
 
     # Try to get Google data
     if api_key:
         if google_place_id:
             google_data = get_restaurant_google_data(google_place_id, api_key)
+            if not google_data:
+                st.warning(f"⚠️ API call failed for place_id: {google_place_id}")
         else:
             # Try to search for the place
             google_place_id = search_restaurant_place_id(restaurant['name'], "San Francisco, CA", api_key)
@@ -1103,12 +1126,21 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
                 google_data = get_restaurant_google_data(google_place_id, api_key)
                 # Save the place_id for future use
                 restaurant['google_place_id'] = google_place_id
+                if google_data:
+                    st.success(f"✅ Found Google data for {restaurant['name']}")
+            else:
+                st.warning(f"⚠️ Could not find Google place_id for {restaurant['name']}")
     else:
         google_data = None
 
     # Display hero with Google rating if available
     google_rating = google_data.get('rating') if google_data else None
     google_reviews_count = google_data.get('user_ratings_total') if google_data else None
+
+    # Build review section if available
+    review_html = ""
+    if google_rating and google_reviews_count:
+        review_html = f'<span>•</span><span>⭐ {google_rating} ({google_reviews_count} reviews)</span>'
 
     st.markdown(f"""
     <div class="detail-hero">
@@ -1119,7 +1151,7 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             <span>🍽️ {restaurant['cuisine']}</span>
             <span>•</span>
             <span class="badge badge-{platform}">{platform.upper()}</span>
-            {f'<span>•</span><span>⭐ {google_rating} ({google_reviews_count} reviews)</span>' if google_rating else ''}
+            {review_html}
         </div>
     </div>
     """, unsafe_allow_html=True)
