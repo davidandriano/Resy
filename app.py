@@ -11,8 +11,7 @@ import time
 
 # Configure page
 st.set_page_config(
-    page_title="Resy Reservation Bot",
-    page_icon="🍽️",
+    page_title="Reservation Snatcher Bot",
     layout="wide"
 )
 
@@ -280,22 +279,18 @@ if not st.session_state.authenticated:
     st.info("👈 Login with your Resy credentials in the sidebar to get started")
 
     st.markdown("---")
-    st.subheader("Welcome to Resy Bot!")
+    st.subheader("Welcome to Resy Snatcher!")
     st.markdown("""
     ### 🎯 Features
     - **Manual Booking**: Instantly book available reservations
     - **Cancellation Hunting**: Automatically grab cancellations as they appear
     - **Scheduled Monitoring**: Set up midnight releases and timed bookings
-    - **Multi-User**: Each person can login with their own Resy account
 
     ### 🚀 Getting Started
     1. Enter your Resy credentials in the sidebar
     2. Click "Login" to connect
     3. Start booking reservations!
 
-    ### 💡 Multiple Users
-    Anyone can use this app with their own Resy account. Just login with your credentials,
-    and the app will book reservations to your account. Logout to switch accounts.
     """)
 
 else:
@@ -866,6 +861,6 @@ else:
 # Footer
 st.markdown("---")
 st.markdown(
-    "<div style='text-align: center; color: #666;'>🍽️ Resy Bot • San Francisco Edition</div>",
+    "<div style='text-align: center; color: #666;'>🍽️ Resy Snatcher • San Francisco Edition</div>",
     unsafe_allow_html=True
 )
