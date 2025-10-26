@@ -90,19 +90,36 @@ if 'waiting_for_scheduled_start' not in st.session_state:
     st.session_state.waiting_for_scheduled_start = False
 if 'check_interval' not in st.session_state:
     st.session_state.check_interval = 5
+if 'user_email' not in st.session_state:
+    st.session_state.user_email = None
+if 'user_password' not in st.session_state:
+    st.session_state.user_password = None
 
-def authenticate_bot():
-    """Authenticate the bot with Resy"""
+def authenticate_bot(email=None, password=None):
+    """Authenticate the bot with Resy using provided credentials or .env"""
     try:
-        settings = load_settings()
+        # Try to load from .env if no credentials provided
+        if email is None or password is None:
+            try:
+                settings = load_settings()
+                email = settings.resy_email
+                password = settings.resy_password
+            except:
+                return False, "No credentials provided and .env file not found"
+
+        # Create a minimal Settings object with the credentials
+        from config import Settings
+        settings = Settings(resy_email=email, resy_password=password)
         bot = ResyBot(settings)
 
         if bot.authenticate():
             st.session_state.bot = bot
             st.session_state.authenticated = True
-            return True, "Successfully connected to Resy!"
+            st.session_state.user_email = email
+            st.session_state.user_password = password
+            return True, f"Successfully connected to Resy as {email}!"
         else:
-            return False, "Authentication failed. Check your .env credentials."
+            return False, "Authentication failed. Check your credentials."
     except Exception as e:
         return False, f"Error: {str(e)}"
 
@@ -179,23 +196,53 @@ with st.sidebar:
 
     if not st.session_state.authenticated:
         st.warning("Not connected to Resy")
-        if st.button("Connect to Resy", type="primary"):
-            with st.spinner("Connecting..."):
-                success, message = authenticate_bot()
-                if success:
-                    st.success(message)
-                    st.rerun()
+
+        with st.form("login_form"):
+            st.subheader("Login to Resy")
+            email = st.text_input(
+                "Email",
+                placeholder="your@email.com",
+                help="Your Resy account email"
+            )
+            password = st.text_input(
+                "Password",
+                type="password",
+                help="Your Resy account password"
+            )
+
+            submit = st.form_submit_button("🔐 Login", type="primary", use_container_width=True)
+
+            if submit:
+                if not email or not password:
+                    st.error("Please enter both email and password")
                 else:
-                    st.error(message)
+                    with st.spinner("Connecting to Resy..."):
+                        success, message = authenticate_bot(email, password)
+                        if success:
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
+
+        st.caption("💡 Each person can login with their own Resy account")
     else:
         st.success("✓ Connected to Resy")
+        if st.session_state.user_email:
+            st.caption(f"Logged in as: **{st.session_state.user_email}**")
+
         payment_methods = st.session_state.bot.client.payment_method_id
         if payment_methods:
             st.info("✓ Payment method found")
 
-        if st.button("Disconnect"):
+        if st.button("🚪 Logout", use_container_width=True):
             st.session_state.authenticated = False
             st.session_state.bot = None
+            st.session_state.user_email = None
+            st.session_state.user_password = None
+            # Stop monitoring if active
+            st.session_state.monitoring_active = False
+            st.session_state.waiting_for_scheduled_start = False
+            st.session_state.monitoring_config = None
             st.rerun()
 
     st.divider()
@@ -230,14 +277,25 @@ with st.sidebar:
 
 # Main content
 if not st.session_state.authenticated:
-    st.info("👆 Click 'Connect to Resy' in the sidebar to get started")
+    st.info("👈 Login with your Resy credentials in the sidebar to get started")
 
     st.markdown("---")
-    st.subheader("Quick Setup")
+    st.subheader("Welcome to Resy Bot!")
     st.markdown("""
-    1. Make sure your `.env` file is configured with your Resy credentials
-    2. Click "Connect to Resy" in the sidebar
+    ### 🎯 Features
+    - **Manual Booking**: Instantly book available reservations
+    - **Cancellation Hunting**: Automatically grab cancellations as they appear
+    - **Scheduled Monitoring**: Set up midnight releases and timed bookings
+    - **Multi-User**: Each person can login with their own Resy account
+
+    ### 🚀 Getting Started
+    1. Enter your Resy credentials in the sidebar
+    2. Click "Login" to connect
     3. Start booking reservations!
+
+    ### 💡 Multiple Users
+    Anyone can use this app with their own Resy account. Just login with your credentials,
+    and the app will book reservations to your account. Logout to switch accounts.
     """)
 
 else:
@@ -729,6 +787,18 @@ else:
         st.subheader("How to Use")
 
         st.markdown("""
+        ### 🔐 First Time Setup
+
+        1. **Login with Your Resy Account**
+           - Enter your Resy email and password in the sidebar
+           - Click "Login" to connect
+           - Your credentials are stored only in your browser session
+
+        2. **Multiple Users**
+           - Anyone can use this app with their own Resy account
+           - Each person logs in with their credentials
+           - Click "Logout" to switch accounts
+
         ### 🎯 Quick Start - Manual Booking
 
         1. **Select a Restaurant** (Book Reservation tab)
@@ -755,6 +825,7 @@ else:
 
         ### ✨ Features
 
+        - **Multi-User Support**: Each person can login with their own Resy account
         - **Searchable Database**: Type to filter restaurants
         - **Manual Booking**: Instant one-time reservations
         - **Continuous Monitoring**: Automated cancellation hunting
@@ -762,6 +833,7 @@ else:
         - **Real-time Status**: See attempt count and last check time
         - **SF Focused**: Curated list of San Francisco restaurants
         - **Expandable**: Add new restaurants as you discover them
+        - **Secure**: Credentials stored only in browser session
 
         ### 📍 Expanding the Database
 
