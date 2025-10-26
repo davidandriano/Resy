@@ -5,44 +5,63 @@
       "venue_id": 6291,
       "neighborhood": "Mission",
       "cuisine": "Italian",
-      "platform": "resy"
+      "platform": "resy",
+      "reservation_release": {
+        "days_in_advance": 28,
+        "time": "00:00",
+        "timezone": "America/Los_Angeles"
+      },
+      "hours": {
+        "monday": {"open": "17:30", "close": "22:00"},
+        "tuesday": {"open": "17:30", "close": "22:00"},
+        "wednesday": {"open": "17:30", "close": "22:00"},
+        "thursday": {"open": "17:30", "close": "22:00"},
+        "friday": {"open": "17:30", "close": "22:00"},
+        "saturday": {"open": "17:30", "close": "22:00"},
+        "sunday": {"closed": true}
+      }
     },
     {
       "name": "Izakaya Rintaro",
       "venue_id": 339,
       "neighborhood": "Mission",
       "cuisine": "Japanese",
-      "platform": "resy"
+      "platform": "resy",
+      "reservation_release": {
+        "days_in_advance": 28,
+        "time": "10:00",
+        "timezone": "America/Los_Angeles"
+      },
+      "hours": {
+        "monday": {"closed": true},
+        "tuesday": {"open": "17:30", "close": "21:30"},
+        "wednesday": {"open": "17:30", "close": "21:30"},
+        "thursday": {"open": "17:30", "close": "21:30"},
+        "friday": {"open": "17:30", "close": "21:30"},
+        "saturday": {"open": "17:00", "close": "21:30"},
+        "sunday": {"open": "17:00", "close": "21:00"}
+      }
     },
     {
-      "name": "Liholiho Yacht Club",
-      "venue_id": 58585,
-      "neighborhood": "Nob Hill",
-      "cuisine": "Hawaiian"
-    },
-    {
-      "name": "Flour + Water",
-      "venue_id": 6291,
-      "neighborhood": "Mission",
-      "cuisine": "Italian"
-    },
-    {
-      "name": "side a",
-      "venue_id": 86872,
-      "neighborhood": "Mission",
-      "cuisine": "Bistro"
-    },
-    {
-      "name": "mijote",
-      "venue_id": 82961,
-      "neighborhood": "Mijoté",
-      "cuisine": "French"
-    },
-    {
-      "name": "Jilli",
-      "venue_id": 89679,
-      "neighborhood": "Korean",
-      "cuisine": "Mission"
+      "name": "State Bird Provisions",
+      "venue_id": 187,
+      "neighborhood": "Western Addition",
+      "cuisine": "American",
+      "platform": "resy",
+      "reservation_release": {
+        "days_in_advance": 60,
+        "time": "09:00",
+        "timezone": "America/Los_Angeles"
+      },
+      "hours": {
+        "monday": {"closed": true},
+        "tuesday": {"closed": true},
+        "wednesday": {"open": "17:30", "close": "22:00"},
+        "thursday": {"open": "17:30", "close": "22:00"},
+        "friday": {"open": "17:30", "close": "22:00"},
+        "saturday": {"open": "17:30", "close": "22:00"},
+        "sunday": {"open": "17:30", "close": "21:00"}
+      }
     }
   ]
 }
