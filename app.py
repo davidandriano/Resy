@@ -603,6 +603,7 @@ else:
                         max_value=20,
                         value=2,
                         help="Number of people"
+                        key="monitor_party_size"
                     )
 
                     reservation_date = st.date_input(
