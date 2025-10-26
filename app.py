@@ -422,9 +422,9 @@ with col2:
 
 with col3:
     if st.session_state.resy_authenticated:
-        st.success(f"🟢 Resy", help=f"Logged in as {st.session_state.resy_email}")
+        st.success(f"🟢 Resy: {st.session_state.resy_email}")
     elif st.session_state.opentable_authenticated:
-        st.success(f"🟢 OpenTable", help=f"Logged in as {st.session_state.opentable_email}")
+        st.success(f"🟢 OpenTable: {st.session_state.opentable_email}")
     else:
         st.info("Not logged in")
 
@@ -571,7 +571,7 @@ else:
 
     # Display restaurants
     if filtered:
-        for restaurant in filtered:
+        for idx, restaurant in enumerate(filtered):
             platform = restaurant.get('platform', 'resy')
 
             # Restaurant card
@@ -591,7 +591,7 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button(f"View availability →", key=f"view_{restaurant['venue_id']}", use_container_width=True):
+                if st.button(f"View availability →", key=f"browse_view_{idx}_{restaurant['venue_id']}", use_container_width=True):
                     st.session_state.selected_restaurant = restaurant
                     st.session_state.view_mode = 'detail'
                     st.rerun()
