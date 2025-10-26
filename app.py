@@ -11,7 +11,8 @@ import time
 
 # Configure page
 st.set_page_config(
-    page_title="Reservation Snatcher Bot",
+    page_title="Resy Reservation Bot",
+    page_icon="🍽️",
     layout="wide"
 )
 
@@ -139,7 +140,7 @@ def check_availability(venue_id, party_size, reservation_date):
         st.error(f"Error checking availability: {str(e)}")
         return []
 
-def add_new_restaurant(name, venue_id, neighborhood, cuisine):
+def add_new_restaurant(name, venue_id, neighborhood, cuisine, platform="resy"):
     """Add a new restaurant to the database"""
     db = load_restaurants()
 
@@ -152,7 +153,8 @@ def add_new_restaurant(name, venue_id, neighborhood, cuisine):
         "name": name,
         "venue_id": venue_id,
         "neighborhood": neighborhood,
-        "cuisine": cuisine
+        "cuisine": cuisine,
+        "platform": platform
     }
 
     db["san_francisco"].append(new_restaurant)
@@ -162,6 +164,58 @@ def add_new_restaurant(name, venue_id, neighborhood, cuisine):
     st.cache_data.clear()  # Clear cache to reload data
 
     return True, f"Added {name} to database!"
+
+def update_restaurant(old_venue_id, name, new_venue_id, neighborhood, cuisine, platform="resy"):
+    """Update an existing restaurant in the database"""
+    db = load_restaurants()
+
+    # Find the restaurant by old venue_id
+    restaurant_found = False
+    for i, restaurant in enumerate(db["san_francisco"]):
+        if restaurant["venue_id"] == old_venue_id:
+            # Check if new venue_id conflicts with another restaurant
+            if new_venue_id != old_venue_id:
+                for other in db["san_francisco"]:
+                    if other["venue_id"] == new_venue_id and other["venue_id"] != old_venue_id:
+                        return False, f"Venue ID {new_venue_id} is already used by another restaurant"
+
+            # Update the restaurant
+            db["san_francisco"][i] = {
+                "name": name,
+                "venue_id": new_venue_id,
+                "neighborhood": neighborhood,
+                "cuisine": cuisine,
+                "platform": platform
+            }
+            restaurant_found = True
+            break
+
+    if not restaurant_found:
+        return False, "Restaurant not found in database"
+
+    # Sort by name
+    db["san_francisco"] = sorted(db["san_francisco"], key=lambda x: x["name"])
+
+    save_restaurants(db)
+    st.cache_data.clear()  # Clear cache to reload data
+
+    return True, f"Updated {name}!"
+
+def delete_restaurant(venue_id):
+    """Delete a restaurant from the database"""
+    db = load_restaurants()
+
+    # Find and remove the restaurant
+    original_count = len(db["san_francisco"])
+    db["san_francisco"] = [r for r in db["san_francisco"] if r["venue_id"] != venue_id]
+
+    if len(db["san_francisco"]) == original_count:
+        return False, "Restaurant not found in database"
+
+    save_restaurants(db)
+    st.cache_data.clear()  # Clear cache to reload data
+
+    return True, "Restaurant deleted!"
 
 def perform_monitoring_check():
     """Perform a single monitoring check and attempt booking"""
@@ -279,18 +333,22 @@ if not st.session_state.authenticated:
     st.info("👈 Login with your Resy credentials in the sidebar to get started")
 
     st.markdown("---")
-    st.subheader("Welcome to Resy Snatcher!")
+    st.subheader("Welcome to Resy Bot!")
     st.markdown("""
     ### 🎯 Features
     - **Manual Booking**: Instantly book available reservations
     - **Cancellation Hunting**: Automatically grab cancellations as they appear
     - **Scheduled Monitoring**: Set up midnight releases and timed bookings
+    - **Multi-User**: Each person can login with their own Resy account
 
     ### 🚀 Getting Started
     1. Enter your Resy credentials in the sidebar
     2. Click "Login" to connect
     3. Start booking reservations!
 
+    ### 💡 Multiple Users
+    Anyone can use this app with their own Resy account. Just login with your credentials,
+    and the app will book reservations to your account. Logout to switch accounts.
     """)
 
 else:
@@ -304,9 +362,9 @@ else:
         db = load_restaurants()
         sf_restaurants = db.get("san_francisco", [])
 
-        # Create searchable list
+        # Create searchable list with platform badges
         restaurant_options = [""] + [
-            f"{r['name']} - {r['neighborhood']} ({r['cuisine']})"
+            f"{r['name']} - {r['neighborhood']} ({r['cuisine']}) [{r.get('platform', 'resy').upper()}]"
             for r in sf_restaurants
         ]
 
@@ -566,9 +624,9 @@ else:
             db = load_restaurants()
             sf_restaurants = db.get("san_francisco", [])
 
-            # Create searchable list
+            # Create searchable list with platform badges
             restaurant_options = [""] + [
-                f"{r['name']} - {r['neighborhood']} ({r['cuisine']})"
+                f"{r['name']} - {r['neighborhood']} ({r['cuisine']}) [{r.get('platform', 'resy').upper()}]"
                 for r in sf_restaurants
             ]
 
@@ -605,7 +663,8 @@ else:
                         "Reservation Date",
                         min_value=date.today(),
                         value=date.today() + timedelta(days=7),
-                        help="Date for your reservation"
+                        help="Date for your reservation",
+                        key="monitor_reservation_date"
                     )
 
                     check_interval = st.number_input(
@@ -613,7 +672,8 @@ else:
                         min_value=3,
                         max_value=60,
                         value=5,
-                        help="How often to check (5 seconds recommended for cancellation hunting)"
+                        help="How often to check (5 seconds recommended for cancellation hunting)",
+                        key="monitor_check_interval"
                     )
 
                 with col2:
@@ -641,7 +701,8 @@ else:
                     auto_accept = st.checkbox(
                         "Accept any available time",
                         value=True,
-                        help="Recommended: Book any time if preferred times are unavailable"
+                        help="Recommended: Book any time if preferred times are unavailable",
+                        key="monitor_auto_accept"
                     )
 
                 st.divider()
@@ -649,7 +710,8 @@ else:
                 # Scheduled start option
                 use_scheduled_start = st.checkbox(
                     "⏰ Schedule Start Time",
-                    help="Start monitoring at a specific time (e.g., midnight when reservations release)"
+                    help="Start monitoring at a specific time (e.g., midnight when reservations release)",
+                    key="monitor_use_scheduled_start"
                 )
 
                 scheduled_time_input = None
@@ -660,13 +722,15 @@ else:
                             "Start Date",
                             value=date.today(),
                             min_value=date.today(),
-                            help="Date to start monitoring"
+                            help="Date to start monitoring",
+                            key="monitor_scheduled_date"
                         )
                     with col_b:
                         scheduled_time = st.time_input(
                             "Start Time",
                             value=datetime.strptime("00:00", "%H:%M").time(),
-                            help="Time to start monitoring (e.g., 00:00 for midnight)"
+                            help="Time to start monitoring (e.g., 00:00 for midnight)",
+                            key="monitor_scheduled_time"
                         )
 
                     scheduled_time_input = datetime.combine(scheduled_date, scheduled_time)
@@ -734,50 +798,179 @@ else:
                 st.info("👆 Select a restaurant to start monitoring")
 
     with tab3:
-        st.subheader("Add a New Restaurant to Database")
+        st.subheader("Manage Restaurant Database")
 
-        st.markdown("""
-        Can't find your restaurant? Add it here! You'll need to find the venue ID first:
-        1. Go to the restaurant's page on resy.com
-        2. Look at the URL or use browser dev tools to find the venue ID
-        """)
+        # Create sub-tabs for Add/Edit/Delete
+        manage_tab1, manage_tab2 = st.tabs(["➕ Add New", "✏️ Edit/Delete"])
 
-        with st.form("add_restaurant"):
-            new_name = st.text_input("Restaurant Name", placeholder="e.g., Zuni Cafe")
-            new_venue_id = st.number_input("Venue ID", min_value=1, step=1)
-            new_neighborhood = st.text_input("Neighborhood", placeholder="e.g., Hayes Valley")
-            new_cuisine = st.text_input("Cuisine Type", placeholder="e.g., Mediterranean")
+        with manage_tab1:
+            st.markdown("""
+            **Add a new restaurant to your database**
 
-            submitted = st.form_submit_button("Add Restaurant", type="primary")
+            To find a venue ID:
+            1. Go to the restaurant's page on resy.com
+            2. Right-click → Inspect (or press F12)
+            3. Press Ctrl+F and search for `venue_id`
+            4. Copy the number you find
+            """)
 
-            if submitted:
-                if new_name and new_venue_id and new_neighborhood and new_cuisine:
-                    success, message = add_new_restaurant(
-                        new_name,
-                        new_venue_id,
-                        new_neighborhood,
-                        new_cuisine
+            with st.form("add_restaurant"):
+                new_name = st.text_input("Restaurant Name", placeholder="e.g., Zuni Cafe")
+                new_venue_id = st.number_input("Venue ID", min_value=1, step=1)
+                new_neighborhood = st.text_input("Neighborhood", placeholder="e.g., Hayes Valley")
+                new_cuisine = st.text_input("Cuisine Type", placeholder="e.g., Mediterranean")
+                new_platform = st.selectbox(
+                    "Platform",
+                    options=["resy", "opentable"],
+                    help="Which platform is this restaurant on?"
+                )
+
+                submitted = st.form_submit_button("Add Restaurant", type="primary")
+
+                if submitted:
+                    if new_name and new_venue_id and new_neighborhood and new_cuisine:
+                        success, message = add_new_restaurant(
+                            new_name,
+                            new_venue_id,
+                            new_neighborhood,
+                            new_cuisine,
+                            new_platform
+                        )
+
+                        if success:
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
+                    else:
+                        st.error("Please fill in all fields")
+
+        with manage_tab2:
+            st.markdown("**Edit or delete existing restaurants**")
+
+            # Load fresh data
+            db = load_restaurants()
+            sf_restaurants_edit = db.get("san_francisco", [])
+
+            if not sf_restaurants_edit:
+                st.info("No restaurants in database yet. Add some first!")
+            else:
+                # Create dropdown options
+                restaurant_options = [""] + [
+                    f"{r['name']} (ID: {r['venue_id']})"
+                    for r in sf_restaurants_edit
+                ]
+
+                selected_option = st.selectbox(
+                    "Select restaurant to edit",
+                    options=restaurant_options,
+                    help="Choose a restaurant to update or delete"
+                )
+
+                if selected_option:
+                    # Find selected restaurant
+                    selected_name = selected_option.split(" (ID:")[0]
+                    selected_restaurant = next(
+                        (r for r in sf_restaurants_edit if r["name"] == selected_name),
+                        None
                     )
 
-                    if success:
-                        st.success(message)
-                        st.rerun()
-                    else:
-                        st.error(message)
-                else:
-                    st.error("Please fill in all fields")
+                    if selected_restaurant:
+                        st.divider()
+
+                        # Edit form
+                        with st.form("edit_restaurant"):
+                            st.write(f"**Editing:** {selected_restaurant['name']}")
+
+                            edit_name = st.text_input(
+                                "Restaurant Name",
+                                value=selected_restaurant['name']
+                            )
+                            edit_venue_id = st.number_input(
+                                "Venue ID",
+                                min_value=1,
+                                step=1,
+                                value=selected_restaurant['venue_id'],
+                                help="Update this if the venue ID is incorrect"
+                            )
+                            edit_neighborhood = st.text_input(
+                                "Neighborhood",
+                                value=selected_restaurant['neighborhood']
+                            )
+                            edit_cuisine = st.text_input(
+                                "Cuisine Type",
+                                value=selected_restaurant['cuisine']
+                            )
+                            edit_platform = st.selectbox(
+                                "Platform",
+                                options=["resy", "opentable"],
+                                index=0 if selected_restaurant.get('platform', 'resy') == 'resy' else 1,
+                                help="Which platform is this restaurant on?"
+                            )
+
+                            col1, col2 = st.columns(2)
+
+                            with col1:
+                                update_btn = st.form_submit_button(
+                                    "💾 Update Restaurant",
+                                    type="primary",
+                                    use_container_width=True
+                                )
+
+                            with col2:
+                                delete_btn = st.form_submit_button(
+                                    "🗑️ Delete Restaurant",
+                                    type="secondary",
+                                    use_container_width=True
+                                )
+
+                            if update_btn:
+                                if edit_name and edit_venue_id and edit_neighborhood and edit_cuisine:
+                                    success, message = update_restaurant(
+                                        selected_restaurant['venue_id'],  # old venue_id
+                                        edit_name,
+                                        edit_venue_id,  # new venue_id
+                                        edit_neighborhood,
+                                        edit_cuisine,
+                                        edit_platform
+                                    )
+
+                                    if success:
+                                        st.success(message)
+                                        st.rerun()
+                                    else:
+                                        st.error(message)
+                                else:
+                                    st.error("Please fill in all fields")
+
+                            if delete_btn:
+                                success, message = delete_restaurant(selected_restaurant['venue_id'])
+
+                                if success:
+                                    st.success(message)
+                                    st.rerun()
+                                else:
+                                    st.error(message)
 
         st.divider()
 
         st.subheader("Current Database")
-        if sf_restaurants:
-            for restaurant in sf_restaurants:
+        db = load_restaurants()
+        sf_restaurants_display = db.get("san_francisco", [])
+
+        if sf_restaurants_display:
+            st.write(f"**{len(sf_restaurants_display)} restaurant(s) in database**")
+            for restaurant in sf_restaurants_display:
+                platform = restaurant.get('platform', 'resy').upper()
+                platform_color = "#ff5a5f" if platform == "RESY" else "#da3743"
                 st.markdown(f"""
                 <div class="restaurant-card">
-                    <strong>{restaurant['name']}</strong><br>
+                    <strong>{restaurant['name']}</strong> <span style="background-color:{platform_color};color:white;padding:2px 6px;border-radius:3px;font-size:0.7em;">{platform}</span><br>
                     <small>{restaurant['neighborhood']} • {restaurant['cuisine']} • ID: {restaurant['venue_id']}</small>
                 </div>
                 """, unsafe_allow_html=True)
+        else:
+            st.info("Database is empty. Add your first restaurant above!")
 
     with tab4:
         st.subheader("How to Use")
@@ -861,6 +1054,6 @@ else:
 # Footer
 st.markdown("---")
 st.markdown(
-    "<div style='text-align: center; color: #666;'>🍽️ Resy Snatcher • San Francisco Edition</div>",
+    "<div style='text-align: center; color: #666;'>🍽️ Resy Bot • San Francisco Edition</div>",
     unsafe_allow_html=True
 )
