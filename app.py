@@ -465,7 +465,7 @@ with tab1:
 
     # Display restaurants in grid
     if filtered_restaurants:
-        for restaurant in filtered_restaurants:
+        for idx, restaurant in enumerate(filtered_restaurants):
             platform = restaurant.get('platform', 'resy')
             platform_badge = f'<span class="badge-{platform}">{platform.upper()}</span>'
 
@@ -489,14 +489,14 @@ with tab1:
                         min_value=1,
                         max_value=20,
                         value=2,
-                        key=f"party_{restaurant['venue_id']}"
+                        key=f"browse_party_{idx}_{restaurant['venue_id']}"
                     )
 
                     reservation_date = st.date_input(
                         "Date",
                         min_value=date.today(),
                         value=date.today() + timedelta(days=7),
-                        key=f"date_{restaurant['venue_id']}"
+                        key=f"browse_date_{idx}_{restaurant['venue_id']}"
                     )
 
                 with col2:
@@ -514,7 +514,7 @@ with tab1:
                             minute = time_slot.split(":")[1]
                             display_time = f"{hour if hour <= 12 else hour-12}:{minute} {'PM' if hour >= 12 else 'AM'}"
 
-                            if st.checkbox(display_time, key=f"time_{restaurant['venue_id']}_{time_slot}"):
+                            if st.checkbox(display_time, key=f"browse_time_{idx}_{restaurant['venue_id']}_{time_slot}"):
                                 selected_times.append(time_slot)
 
                 # Check authentication status for this platform
@@ -526,7 +526,7 @@ with tab1:
                 col_btn1, col_btn2 = st.columns(2)
 
                 with col_btn1:
-                    if st.button(f"🔍 Check Availability", key=f"check_{restaurant['venue_id']}", use_container_width=True):
+                    if st.button(f"🔍 Check Availability", key=f"browse_check_{idx}_{restaurant['venue_id']}", use_container_width=True):
                         if not is_authenticated:
                             st.warning(f"Please login to {platform.title()} to check availability")
                             st.session_state.login_platform = platform
@@ -548,7 +548,7 @@ with tab1:
                                     st.warning("No availability found")
 
                 with col_btn2:
-                    if st.button(f"📅 Book Now", key=f"book_{restaurant['venue_id']}", type="primary", use_container_width=True):
+                    if st.button(f"📅 Book Now", key=f"browse_book_{idx}_{restaurant['venue_id']}", type="primary", use_container_width=True):
                         if not is_authenticated:
                             st.warning(f"Please login to {platform.title()} to book a reservation")
                             st.session_state.login_platform = platform
