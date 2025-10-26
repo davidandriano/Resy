@@ -311,6 +311,157 @@ st.markdown("""
         color: #555;
         line-height: 1.6;
     }
+
+    /* Availability Calendar */
+    .availability-calendar {
+        background: #fafafa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+
+    .calendar-header {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #1a1a1a;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-day {
+        text-align: center;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-day-header {
+        font-weight: 700;
+        color: #767676;
+        font-size: 0.75rem;
+        padding: 0.5rem;
+    }
+
+    .calendar-day-available {
+        background: #e8f5e9;
+        border: 1.5px solid #4caf50;
+        color: #2e7d32;
+        cursor: pointer;
+    }
+
+    .calendar-day-available:hover {
+        background: #c8e6c9;
+        transform: translateY(-2px);
+    }
+
+    .calendar-day-unavailable {
+        background: #ffebee;
+        border: 1.5px solid #f44336;
+        color: #c62828;
+    }
+
+    .calendar-day-closed {
+        background: #f5f5f5;
+        border: 1.5px solid #e0e0e0;
+        color: #9e9e9e;
+        text-decoration: line-through;
+    }
+
+    .calendar-day-checking {
+        background: white;
+        border: 1.5px dashed #e5e5e5;
+        color: #767676;
+    }
+
+    .calendar-legend {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        font-size: 0.85rem;
+        margin-top: 1rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .legend-box {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 1.5px solid;
+    }
+
+    /* Table Hunter Section */
+    .hunter-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem 0;
+        color: white;
+    }
+
+    .hunter-title {
+        font-family: 'Lora', serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .hunter-subtitle {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+
+    .hunter-status {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        backdrop-filter: blur(10px);
+    }
+
+    .hunter-status-active {
+        background: rgba(76, 175, 80, 0.25);
+        border: 2px solid rgba(76, 175, 80, 0.5);
+    }
+
+    .hunter-status-inactive {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Snatcher Section */
+    .snatcher-section {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem 0;
+        color: white;
+    }
+
+    .snatcher-title {
+        font-family: 'Lora', serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .snatcher-subtitle {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -350,6 +501,12 @@ if 'show_login' not in st.session_state:
     st.session_state.show_login = False
 if 'login_platform' not in st.session_state:
     st.session_state.login_platform = None
+if 'active_hunters' not in st.session_state:
+    st.session_state.active_hunters = {}  # {hunt_id: {restaurant, date, times, party_size, ...}}
+if 'active_snatchers' not in st.session_state:
+    st.session_state.active_snatchers = {}  # {snatch_id: {restaurant, target_date, time, party_size, ...}}
+if 'hunt_results' not in st.session_state:
+    st.session_state.hunt_results = []  # List of successful hunts
 
 def authenticate_resy(email, password):
     """Authenticate with Resy"""
@@ -451,6 +608,93 @@ def is_restaurant_open(restaurant, check_date):
     day_hours = restaurant['hours'].get(day_name, {})
 
     return not day_hours.get('closed', False)
+
+def generate_availability_calendar(restaurant, party_size, platform, start_date=None, num_days=14):
+    """
+    Generate HTML for availability calendar with color coding
+
+    Args:
+        restaurant: Restaurant data dict
+        party_size: Number of people
+        platform: 'resy' or 'opentable'
+        start_date: Start date (defaults to today)
+        num_days: Number of days to show
+
+    Returns:
+        Tuple of (html_string, availability_data)
+    """
+    if start_date is None:
+        start_date = date.today()
+
+    # Build calendar HTML
+    html = '<div class="availability-calendar">'
+    html += '<div class="calendar-header">Availability Calendar (Next 2 Weeks)</div>'
+    html += '<div class="calendar-grid">'
+
+    # Day headers
+    day_headers = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    for day_header in day_headers:
+        html += f'<div class="calendar-day calendar-day-header">{day_header}</div>'
+
+    # Find the first Monday to start the calendar
+    days_to_subtract = start_date.weekday()  # 0 = Monday, 6 = Sunday
+    calendar_start = start_date - timedelta(days=days_to_subtract)
+
+    # Generate calendar days
+    availability_data = {}
+    current_date = calendar_start
+    days_shown = 0
+
+    # Show enough weeks to cover num_days
+    total_days_to_show = ((num_days + days_to_subtract) // 7 + 1) * 7
+
+    for i in range(total_days_to_show):
+        current_date = calendar_start + timedelta(days=i)
+
+        # Check if this date is in the future or today
+        is_past = current_date < start_date
+        is_open = is_restaurant_open(restaurant, current_date)
+
+        # Format date for display
+        day_num = current_date.day
+        month_str = current_date.strftime('%b') if current_date.day == 1 or i == 0 else ''
+        display_text = f"{month_str} {day_num}" if month_str else str(day_num)
+
+        if is_past:
+            # Past dates - show as disabled
+            html += f'<div class="calendar-day calendar-day-closed">{display_text}</div>'
+        elif not is_open:
+            # Restaurant closed
+            html += f'<div class="calendar-day calendar-day-closed" title="Closed">{display_text}</div>'
+            availability_data[current_date] = 'closed'
+        else:
+            # Will check availability (shows as "checking" initially)
+            html += f'<div class="calendar-day calendar-day-checking" title="Click to check">{display_text}</div>'
+            availability_data[current_date] = 'checking'
+
+    html += '</div>'
+
+    # Legend
+    html += '''
+    <div class="calendar-legend">
+        <div class="legend-item">
+            <div class="legend-box" style="background: #e8f5e9; border-color: #4caf50;"></div>
+            <span>Available</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #ffebee; border-color: #f44336;"></div>
+            <span>No Availability</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #f5f5f5; border-color: #e0e0e0;"></div>
+            <span>Closed</span>
+        </div>
+    </div>
+    '''
+
+    html += '</div>'
+
+    return html, availability_data
 
 # Custom Header
 col1, col2, col3 = st.columns([1, 3, 1])
@@ -579,6 +823,12 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             value=date.today() + timedelta(days=7)
         )
 
+    # Display availability calendar
+    calendar_html, availability_data = generate_availability_calendar(
+        restaurant, party_size, platform
+    )
+    st.markdown(calendar_html, unsafe_allow_html=True)
+
     # Check if authenticated for this platform
     is_authenticated = (
         (platform == "resy" and st.session_state.resy_authenticated) or
@@ -636,6 +886,183 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.warning("No availability for this date. Try another date or party size.")
+
+    # Table Hunter Section - Cancellation Hunting
+    if is_authenticated:
+        st.markdown("---")
+        st.markdown("""
+        <div class="hunter-section">
+            <div class="hunter-title">🎯 Table Hunter</div>
+            <div class="hunter-subtitle">Automatically snag reservations when they become available from cancellations</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.expander("🔍 Set up Cancellation Hunter", expanded=False):
+            st.write("Monitor for cancellations and automatically book when a table opens up")
+
+            hunt_col1, hunt_col2 = st.columns(2)
+
+            with hunt_col1:
+                hunt_date = st.date_input(
+                    "Target Date",
+                    min_value=date.today(),
+                    value=date.today() + timedelta(days=3),
+                    key="hunter_date"
+                )
+
+            with hunt_col2:
+                hunt_party_size = st.number_input(
+                    "Party Size",
+                    min_value=1,
+                    max_value=20,
+                    value=party_size,
+                    key="hunter_party_size"
+                )
+
+            # Time preferences
+            st.write("**Preferred Times** (select all that work)")
+            time_cols = st.columns(4)
+            preferred_times = []
+
+            common_times = ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30"]
+            for idx, time_24 in enumerate(common_times):
+                col_idx = idx % 4
+                with time_cols[col_idx]:
+                    time_12 = convert_to_12hour(time_24)
+                    if st.checkbox(time_12, key=f"hunt_time_{time_24}"):
+                        preferred_times.append(time_24)
+
+            # Check interval
+            check_interval = st.selectbox(
+                "Check interval",
+                ["Every 30 seconds", "Every 1 minute", "Every 5 minutes"],
+                index=1,
+                key="hunt_interval"
+            )
+
+            hunt_col1, hunt_col2 = st.columns(2)
+
+            with hunt_col1:
+                if st.button("🚀 Start Hunting", type="primary", use_container_width=True, key="start_hunt"):
+                    if preferred_times:
+                        hunt_id = f"{restaurant['venue_id']}_{hunt_date}_{int(time.time())}"
+                        st.session_state.active_hunters[hunt_id] = {
+                            'restaurant': restaurant,
+                            'date': hunt_date,
+                            'times': preferred_times,
+                            'party_size': hunt_party_size,
+                            'platform': platform,
+                            'started': datetime.now(),
+                            'checks': 0,
+                            'interval': check_interval
+                        }
+                        st.success(f"🎯 Hunter activated for {restaurant['name']} on {hunt_date.strftime('%B %d, %Y')}")
+                        st.info("Keep this page open or refresh periodically. The hunter will check for availability automatically.")
+                    else:
+                        st.warning("Please select at least one preferred time")
+
+            with hunt_col2:
+                if st.button("⏹️ Stop All Hunters", type="secondary", use_container_width=True, key="stop_hunts"):
+                    st.session_state.active_hunters = {}
+                    st.info("All hunters stopped")
+
+        # Display active hunters
+        if st.session_state.active_hunters:
+            st.markdown("### 🎯 Active Hunters")
+            for hunt_id, hunt in st.session_state.active_hunters.items():
+                if hunt['restaurant']['venue_id'] == restaurant['venue_id']:
+                    time_str = ", ".join([convert_to_12hour(t) for t in hunt['times'][:3]])
+                    if len(hunt['times']) > 3:
+                        time_str += f" +{len(hunt['times'])-3} more"
+
+                    st.info(f"🔍 Hunting for {hunt['party_size']} on {hunt['date'].strftime('%b %d')} at {time_str} • {hunt['checks']} checks so far")
+
+    # Reservation Snatcher Section - Release Booking
+    if is_authenticated:
+        st.markdown("---")
+        st.markdown("""
+        <div class="snatcher-section">
+            <div class="snatcher-title">⚡ Reservation Snatcher</div>
+            <div class="snatcher-subtitle">Automatically book reservations the moment they're released</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        with st.expander("⚡ Set up Release Snatcher", expanded=False):
+            release_info = restaurant.get('reservation_release', {})
+            days_advance = release_info.get('days_in_advance', 30)
+            release_time = release_info.get('time', '00:00')
+
+            st.info(f"📅 **{restaurant['name']}** releases reservations **{days_advance} days in advance** at **{convert_to_12hour(release_time)}**")
+
+            snatch_col1, snatch_col2 = st.columns(2)
+
+            with snatch_col1:
+                target_date = st.date_input(
+                    "Desired Reservation Date",
+                    min_value=date.today() + timedelta(days=1),
+                    value=date.today() + timedelta(days=days_advance),
+                    key="snatcher_date"
+                )
+
+                # Calculate when this reservation will be released
+                release_date = target_date - timedelta(days=days_advance)
+
+            with snatch_col2:
+                snatch_party_size = st.number_input(
+                    "Party Size",
+                    min_value=1,
+                    max_value=20,
+                    value=party_size,
+                    key="snatcher_party_size"
+                )
+
+            # Show calculated release date/time
+            if release_date >= date.today():
+                st.success(f"✅ This reservation will be released on **{release_date.strftime('%B %d, %Y')}** at **{convert_to_12hour(release_time)}**")
+            else:
+                st.warning(f"⚠️ This reservation was already released on {release_date.strftime('%B %d, %Y')}. Choose a later date.")
+
+            # Preferred time
+            snatch_time = st.selectbox(
+                "Preferred Time",
+                ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30"],
+                format_func=convert_to_12hour,
+                key="snatcher_time"
+            )
+
+            snatch_col1, snatch_col2 = st.columns(2)
+
+            with snatch_col1:
+                if st.button("⚡ Activate Snatcher", type="primary", use_container_width=True, key="start_snatch"):
+                    if release_date >= date.today():
+                        snatch_id = f"{restaurant['venue_id']}_{target_date}_{int(time.time())}"
+                        st.session_state.active_snatchers[snatch_id] = {
+                            'restaurant': restaurant,
+                            'target_date': target_date,
+                            'release_date': release_date,
+                            'release_time': release_time,
+                            'time': snatch_time,
+                            'party_size': snatch_party_size,
+                            'platform': platform,
+                            'created': datetime.now()
+                        }
+                        st.success(f"⚡ Snatcher set for {target_date.strftime('%B %d, %Y')} at {convert_to_12hour(snatch_time)}")
+                        st.info(f"Will attempt booking on {release_date.strftime('%B %d')} at {convert_to_12hour(release_time)}")
+                    else:
+                        st.error("Cannot set snatcher for past release dates")
+
+            with snatch_col2:
+                if st.button("❌ Cancel All Snatchers", type="secondary", use_container_width=True, key="cancel_snatchers"):
+                    st.session_state.active_snatchers = {}
+                    st.info("All snatchers cancelled")
+
+        # Display active snatchers
+        if st.session_state.active_snatchers:
+            st.markdown("### ⚡ Scheduled Snatchers")
+            for snatch_id, snatch in st.session_state.active_snatchers.items():
+                if snatch['restaurant']['venue_id'] == restaurant['venue_id']:
+                    days_until = (snatch['release_date'] - date.today()).days
+                    st.info(f"⚡ Snatcher for {snatch['party_size']} on {snatch['target_date'].strftime('%b %d')} at {convert_to_12hour(snatch['time'])} • Releases in {days_until} days")
 
     # Google Reviews Section
     if google_data and google_data.get('reviews'):

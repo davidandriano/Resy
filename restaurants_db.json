@@ -1,7 +1,28 @@
 {
   "san_francisco": [
     {
-      "name": "Flour + Water",
+      "name": "Jules",
+      "venue_id": 74387,
+      "neighborhood": "Lower Haight",
+      "cuisine": "Pizza",
+      "platform": "resy",
+      "reservation_release": {
+        "days_in_advance": 30,
+        "time": "00:00",
+        "timezone": "America/Los_Angeles"
+      },
+      "hours": {
+        "monday": {"open": "17:00", "close": "22:00"},
+        "tuesday": {"open": "17:00", "close": "22:00"},
+        "wednesday": {"open": "17:00", "close": "22:00"},
+        "thursday": {"open": "17:00", "close": "22:00"},
+        "friday": {"open": "17:00", "close": "23:00"},
+        "saturday": {"open": "17:00", "close": "23:00"},
+        "sunday": {"open": "17:00", "close": "22:00"}
+      }
+    },
+    {
+      "name": "Flour+Water",
       "venue_id": 6291,
       "neighborhood": "Mission",
       "cuisine": "Italian",
@@ -43,10 +64,10 @@
       }
     },
     {
-      "name": "Jules",
-      "venue_id": 74387,
-      "neighborhood": "Lower Haight",
-      "cuisine": "Pizza",
+      "name": "mijoté",
+      "venue_id": 82961,
+      "neighborhood": "Mission",
+      "cuisine": "French",
       "platform": "resy",
       "reservation_release": {
         "days_in_advance": 30,
@@ -55,12 +76,54 @@
       },
       "hours": {
         "monday": {"closed": true},
-        "tuesday": {"open": "17:00", "close": "21:00"},
-        "wednesday": {"open": "17:00", "close": "21:00"},
-        "thursday": {"open": "17:00", "close": "21:00"},
-        "friday": {"open": "17:00", "close": "22:00"},
+        "tuesday": {"closed": true},
+        "wednesday": {"open": "17:30", "close": "22:00"},
+        "thursday": {"open": "17:30", "close": "22:00"},
+        "friday": {"open": "17:30", "close": "22:00"},
+        "saturday": {"open": "17:30", "close": "22:00"},
+        "sunday": {"open": "17:30", "close": "21:00"}
+      }
+    },
+    {
+      "name": "Liholiho Yacht Club",
+      "venue_id": 58585,
+      "neighborhood": "Nob Hill",
+      "cuisine": "Asian",
+      "platform": "resy",
+      "reservation_release": {
+        "days_in_advance": 30,
+        "time": "09:00",
+        "timezone": "America/Los_Angeles"
+      },
+      "hours": {
+        "monday": {"closed": true},
+        "tuesday": {"closed": true},
+        "wednesday": {"open": "17:30", "close": "22:00"},
+        "thursday": {"open": "17:30", "close": "22:00"},
+        "friday": {"open": "17:30", "close": "22:00"},
         "saturday": {"open": "17:00", "close": "22:00"},
-        "sunday": {"closed": true},
+        "sunday": {"open": "17:00", "close": "21:00"}
+      }
+    },
+    {
+      "name": "side a",
+      "venue_id": 86872,
+      "neighborhood": "Mission",
+      "cuisine": "Bistro",
+      "platform": "resy",
+      "reservation_release": {
+        "days_in_advance": 30,
+        "time": "00:00",
+        "timezone": "America/Los_Angeles"
+      },
+      "hours": {
+        "monday": {"closed": true},
+        "tuesday": {"open": "17:30", "close": "22:00"},
+        "wednesday": {"open": "17:30", "close": "22:00"},
+        "thursday": {"open": "17:30", "close": "22:00"},
+        "friday": {"open": "17:30", "close": "22:00"},
+        "saturday": {"open": "17:30", "close": "22:00"},
+        "sunday": {"open": "17:30", "close": "21:00"}
       }
     }
   ]
