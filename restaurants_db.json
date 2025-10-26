@@ -15,11 +15,34 @@
       "platform": "resy"
     },
     {
-      "name": "State Bird Provisions",
-      "venue_id": 187,
-      "neighborhood": "Western Addition",
-      "cuisine": "American",
-      "platform": "resy"
+      "name": "Liholiho Yacht Club",
+      "venue_id": 58585,
+      "neighborhood": "Nob Hill",
+      "cuisine": "Hawaiian"
+    },
+    {
+      "name": "Flour + Water",
+      "venue_id": 6291,
+      "neighborhood": "Mission",
+      "cuisine": "Italian"
+    },
+    {
+      "name": "side a",
+      "venue_id": 86872,
+      "neighborhood": "Mission",
+      "cuisine": "Bistro"
+    },
+    {
+      "name": "mijote",
+      "venue_id": 82961,
+      "neighborhood": "Mijoté",
+      "cuisine": "French"
+    },
+    {
+      "name": "Jilli",
+      "venue_id": 89679,
+      "neighborhood": "Korean",
+      "cuisine": "Mission"
     }
   ]
 }
