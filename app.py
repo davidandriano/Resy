@@ -8,6 +8,7 @@ from config import ReservationConfig, load_settings
 import json
 import os
 import time
+from google_places import GooglePlacesClient, get_restaurant_google_data, search_restaurant_place_id
 
 # Configure page
 st.set_page_config(
@@ -422,9 +423,9 @@ with col2:
 
 with col3:
     if st.session_state.resy_authenticated:
-        st.success(f"🟢 Resy", help=f"Logged in as {st.session_state.resy_email}")
+        st.success(f"🟢 Resy: {st.session_state.resy_email}")
     elif st.session_state.opentable_authenticated:
-        st.success(f"🟢 OpenTable", help=f"Logged in as {st.session_state.opentable_email}")
+        st.success(f"🟢 OpenTable: {st.session_state.opentable_email}")
     else:
         st.info("Not logged in")
 
@@ -442,17 +443,52 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
         st.session_state.selected_restaurant = None
         st.rerun()
 
-    # Restaurant hero section
+    # Restaurant hero section with Google data
+    google_place_id = restaurant.get('google_place_id')
+    google_data = None
+
+    # Try to get Google data
+    if google_place_id:
+        google_data = get_restaurant_google_data(google_place_id, os.getenv('GOOGLE_PLACES_API_KEY'))
+    else:
+        # Try to search for the place
+        google_place_id = search_restaurant_place_id(restaurant['name'], "San Francisco, CA", os.getenv('GOOGLE_PLACES_API_KEY'))
+        if google_place_id:
+            google_data = get_restaurant_google_data(google_place_id, os.getenv('GOOGLE_PLACES_API_KEY'))
+
+    # Display hero with Google rating if available
+    google_rating = google_data.get('rating') if google_data else None
+    google_reviews_count = google_data.get('user_ratings_total') if google_data else None
+
     st.markdown(f"""
     <div class="detail-hero">
         <div class="detail-title">{restaurant['name']}</div>
         <div class="detail-meta">
             <span>📍 {restaurant['neighborhood']}</span>
+            <span>•</span>
             <span>🍽️ {restaurant['cuisine']}</span>
+            <span>•</span>
             <span><span class="badge badge-{platform}">{platform.upper()}</span></span>
+            {f'<span>•</span><span>⭐ {google_rating} ({google_reviews_count} reviews)</span>' if google_rating else ''}
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # Google Photos Section
+    if google_data and google_data.get('photos'):
+        st.markdown("### Photos")
+        photos = google_data['photos'][:6]  # Show up to 6 photos
+        cols = st.columns(3)
+
+        client = GooglePlacesClient(os.getenv('GOOGLE_PLACES_API_KEY'))
+        for idx, photo in enumerate(photos):
+            col_idx = idx % 3
+            with cols[col_idx]:
+                photo_ref = photo.get('photo_reference')
+                if photo_ref:
+                    photo_url = client.get_photo_url(photo_ref, max_width=400)
+                    if photo_url:
+                        st.image(photo_url, use_column_width=True)
 
     # Booking interface
     col1, col2, col3 = st.columns([1, 1, 2])
@@ -523,6 +559,32 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
         else:
             st.warning("No availability for this date. Try another date or party size.")
 
+    # Google Reviews Section
+    if google_data and google_data.get('reviews'):
+        st.markdown("---")
+        st.markdown("### Reviews from Google")
+
+        reviews = google_data['reviews'][:5]  # Top 5 reviews
+        for review in reviews:
+            author = review.get('author_name', 'Anonymous')
+            rating = review.get('rating', 0)
+            text = review.get('text', '')
+            time_desc = review.get('relative_time_description', '')
+
+            # Star rating display
+            stars = "⭐" * int(rating) + "☆" * (5 - int(rating))
+
+            st.markdown(f"""
+            <div class="review-card">
+                <div class="review-author">
+                    <strong>{author}</strong> • {stars} • {time_desc}
+                </div>
+                <div class="review-text">
+                    {text}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
 else:
     # Browse View
     db = load_restaurants()
@@ -571,7 +633,7 @@ else:
 
     # Display restaurants
     if filtered:
-        for restaurant in filtered:
+        for idx, restaurant in enumerate(filtered):
             platform = restaurant.get('platform', 'resy')
 
             # Restaurant card
@@ -591,7 +653,7 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button(f"View availability →", key=f"view_{restaurant['venue_id']}", use_container_width=True):
+                if st.button(f"View availability →", key=f"browse_view_{idx}_{restaurant['venue_id']}", use_container_width=True):
                     st.session_state.selected_restaurant = restaurant
                     st.session_state.view_mode = 'detail'
                     st.rerun()
