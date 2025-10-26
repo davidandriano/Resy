@@ -1,10 +1,18 @@
 {
   "san_francisco": [
     {
+      "name": "Flour + Water",
+      "venue_id": 6291,
+      "neighborhood": "Mission",
+      "cuisine": "Italian",
+      "platform": "resy"
+    },
+    {
       "name": "Izakaya Rintaro",
       "venue_id": 339,
       "neighborhood": "Mission",
-      "cuisine": "Japanese"
+      "cuisine": "Japanese",
+      "platform": "resy"
     },
     {
       "name": "Liholiho Yacht Club",
