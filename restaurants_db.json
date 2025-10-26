@@ -43,24 +43,24 @@
       }
     },
     {
-      "name": "State Bird Provisions",
-      "venue_id": 187,
-      "neighborhood": "Western Addition",
-      "cuisine": "American",
+      "name": "Jules",
+      "venue_id": 74387,
+      "neighborhood": "Lower Haight",
+      "cuisine": "Pizza",
       "platform": "resy",
       "reservation_release": {
-        "days_in_advance": 60,
-        "time": "09:00",
+        "days_in_advance": 30,
+        "time": "00:00",
         "timezone": "America/Los_Angeles"
       },
       "hours": {
         "monday": {"closed": true},
-        "tuesday": {"closed": true},
-        "wednesday": {"open": "17:30", "close": "22:00"},
-        "thursday": {"open": "17:30", "close": "22:00"},
-        "friday": {"open": "17:30", "close": "22:00"},
-        "saturday": {"open": "17:30", "close": "22:00"},
-        "sunday": {"open": "17:30", "close": "21:00"}
+        "tuesday": {"open": "17:00", "close": "21:00"},
+        "wednesday": {"open": "17:00", "close": "21:00"},
+        "thursday": {"open": "17:00", "close": "21:00"},
+        "friday": {"open": "17:00", "close": "22:00"},
+        "saturday": {"open": "17:00", "close": "22:00"},
+        "sunday": {"closed": true},
       }
     }
   ]
