@@ -602,7 +602,7 @@ else:
                         min_value=1,
                         max_value=20,
                         value=2,
-                        help="Number of people"
+                        help="Number of people",
                         key="monitor_party_size"
                     )
 
