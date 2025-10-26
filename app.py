@@ -664,8 +664,25 @@ def parse_reservation_request(text):
             if time_24 not in times_found:  # Avoid duplicates
                 times_found.append(time_24)
 
+    # Check for "around" keyword (e.g., "around 7pm" means 6:30pm, 7pm, 7:30pm)
+    if 'around' in text_lower and times_found:
+        expanded_times = []
+        for time_str in times_found:
+            hour, minute = map(int, time_str.split(':'))
+            total_mins = hour * 60 + minute
+
+            # Add -30 mins, exact time, +30 mins
+            for offset in [-30, 0, 30]:
+                new_mins = total_mins + offset
+                if new_mins >= 0:  # Don't go negative
+                    h = (new_mins // 60) % 24
+                    m = new_mins % 60
+                    expanded_times.append(f"{h:02d}:{m:02d}")
+
+        result['times'] = sorted(list(set(expanded_times)))  # Remove duplicates and sort
+
     # If time range specified (e.g., "7pm - 8:30pm" or "between 7pm and 8:30pm")
-    if ' - ' in text_lower or 'between' in text_lower:
+    elif ' - ' in text_lower or 'between' in text_lower:
         if len(times_found) >= 2:
             # Generate 30-minute intervals between times
             start_time = times_found[0]
@@ -1120,15 +1137,24 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             if not google_data:
                 st.warning(f"⚠️ API call failed for place_id: {google_place_id}")
         else:
-            # Try to search for the place
-            google_place_id = search_restaurant_place_id(restaurant['name'], "San Francisco, CA", api_key)
-            if google_place_id:
-                google_data = get_restaurant_google_data(google_place_id, api_key)
-                # Save the place_id for future use
-                restaurant['google_place_id'] = google_place_id
-                if google_data:
-                    st.success(f"✅ Found Google data for {restaurant['name']}")
-            else:
+            # Try to search for the place with multiple name variations
+            search_names = [
+                restaurant['name'],
+                restaurant['name'].replace('+', ' + '),  # "Flour+Water" -> "Flour + Water"
+                restaurant['name'].replace('+', ' '),     # "Flour+Water" -> "Flour Water"
+            ]
+
+            for search_name in search_names:
+                google_place_id = search_restaurant_place_id(search_name, "San Francisco, CA", api_key)
+                if google_place_id:
+                    google_data = get_restaurant_google_data(google_place_id, api_key)
+                    # Save the place_id for future use
+                    restaurant['google_place_id'] = google_place_id
+                    if google_data:
+                        st.success(f"✅ Found Google data for {restaurant['name']}")
+                    break
+
+            if not google_place_id:
                 st.warning(f"⚠️ Could not find Google place_id for {restaurant['name']}")
     else:
         google_data = None
