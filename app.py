@@ -462,25 +462,34 @@ st.markdown("""
 
     /* Calendar improvements */
     .calendar-day-unreleased {
-        background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
-        border: 2px solid #f5af19;
-        color: white;
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        color: #767676;
         cursor: pointer;
         position: relative;
-        font-weight: 700;
+        font-weight: 500;
     }
 
     .calendar-day-unreleased:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(245, 175, 25, 0.4);
+        border-color: #ffc107;
     }
 
     .calendar-day-unreleased::after {
         content: "⚡";
         position: absolute;
         top: 2px;
-        right: 4px;
-        font-size: 0.9rem;
+        right: 2px;
+        font-size: 0.75rem;
+        background: #ffc107;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     .active-monitor-badge {
@@ -671,6 +680,81 @@ st.markdown("""
         border-radius: 8px;
         padding: 0.75rem;
         margin-bottom: 1rem;
+    }
+
+    /* Grid layout for restaurant browse */
+    .restaurant-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .restaurant-grid-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .restaurant-grid-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        transform: translateY(-4px);
+        border-color: #1a1a1a;
+    }
+
+    .restaurant-grid-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+    }
+
+    .restaurant-grid-info {
+        padding: 1.25rem;
+    }
+
+    .restaurant-grid-name {
+        font-family: 'Lora', serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.75rem;
+    }
+
+    .restaurant-grid-meta {
+        color: #767676;
+        font-size: 0.875rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .restaurant-grid-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Filter section */
+    .filter-section {
+        background: #fafafa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .filter-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #1a1a1a;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1294,19 +1378,11 @@ def render_interactive_calendar(availability_dict, start_date=None):
                     css_class = 'calendar-day-checking'
                     clickable = False
 
-                # Display as button if clickable
+                # Display as button if clickable, or styled div with lightning bolt for unreleased
                 if clickable and current_date >= start_date:
                     button_key = f"cal_{current_date.strftime('%Y%m%d')}"
 
-                    # Create styled button
-                    if state == 'available':
-                        button_style = "background: white; border: 1.5px solid #e5e5e5; color: #0066cc; font-weight: 700; cursor: pointer; padding: 0.75rem; border-radius: 6px; width: 100%;"
-                    elif state == 'unreleased':
-                        button_style = "background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%); border: 2px solid #f5af19; color: white; font-weight: 700; cursor: pointer; padding: 0.75rem; border-radius: 6px; width: 100%; position: relative;"
-                    else:
-                        button_style = "background: white; border: 1.5px solid #e5e5e5; color: #333; padding: 0.75rem; border-radius: 6px; width: 100%;"
-
-                    if st.button(display_text, key=button_key, use_container_width=True):
+                    if st.button(display_text, key=button_key, use_container_width=True, type="primary" if state == 'available' else "secondary"):
                         selected_date = current_date
                 else:
                     # Display as non-clickable div
@@ -1413,8 +1489,9 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             api_key_source = "Environment Variable"
 
     # Hardcoded place_ids for known restaurants (fallback)
+    # Note: These may need to be verified/updated if API calls fail
     KNOWN_PLACE_IDS = {
-        "Flour+Water": "ChIJd7zF4Am9j4ARXwqYr-rrZ0s",
+        "Flour+Water": "ChIJXWBgjQl-j4ARbD-iSSMfpGg",  # Try alternative place_id
         "Jules": "ChIJ_____placeholder_for_jules",
         "Izakaya Rintaro": "ChIJwc4gOgp-j4ARsKCdDZGDfb0",
         "mijoté": "ChIJ_____placeholder_for_mijote",
@@ -1423,17 +1500,27 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
     }
 
     # Debug section
-    with st.expander("🔍 Google API Debug Info", expanded=False):
+    with st.expander("🔍 Google API Debug Info", expanded=True):
         if api_key:
             st.success(f"✅ API Key found from: {api_key_source}")
             st.code(f"Key starts with: {api_key[:20]}...")
+
+            # Add API validation help
+            st.info("**Troubleshooting:** If API calls fail, check:\n"
+                   "1. Places API is enabled in Google Cloud Console\n"
+                   "2. Billing is enabled for the project\n"
+                   "3. API key has no restrictions, or allows Places API\n"
+                   "4. Quotas are not exceeded")
         else:
             st.error("❌ No API key found")
             st.info("Add to .streamlit/secrets.toml:\nGOOGLE_PLACES_API_KEY = \"your-key-here\"")
 
-        st.info(f"Restaurant: {restaurant['name']}")
+        st.info(f"**Restaurant:** {restaurant['name']}")
         if restaurant.get('google_place_id'):
-            st.info(f"Saved place_id: {restaurant.get('google_place_id')}")
+            st.info(f"**Saved place_id:** {restaurant.get('google_place_id')}")
+
+        if restaurant['name'] in KNOWN_PLACE_IDS:
+            st.info(f"**Hardcoded place_id available:** {KNOWN_PLACE_IDS[restaurant['name']]}")
 
     # Try to get Google data
     if api_key:
@@ -1610,9 +1697,14 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             day_name = check_date.strftime('%a').upper()
             day_num = check_date.day
 
+            # Add lightning bolt for unreleased dates
+            display_text = f"{day_name}  \n{day_num}"
+            if state == 'unreleased':
+                display_text = f"{day_name}  \n{day_num} ⚡"
+
             # Create clickable tile
             if st.button(
-                f"{day_name}  \n{day_num}",
+                display_text,
                 key=f"compact_date_{check_date}",
                 use_container_width=True,
                 type="primary" if is_selected else "secondary"
@@ -1902,19 +1994,24 @@ else:
     restaurants = db.get("san_francisco", [])
 
     # Filters
-    st.markdown("### Explore Restaurants")
+    st.markdown("### Discover Restaurants")
 
-    col1, col2, col3 = st.columns([2, 1, 1])
+    # Filter section with cleaner design
+    st.markdown('<div class="filter-section">', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
 
     with col1:
         cuisines = get_cuisines()
-        cuisine_filter = st.selectbox("Cuisine", ["All Cuisines"] + cuisines)
+        cuisine_filter = st.selectbox("Cuisine", ["All Cuisines"] + cuisines, label_visibility="collapsed", key="cuisine_filter_browse")
+        st.caption("Filter by cuisine")
 
     with col2:
-        platform_filter = st.selectbox("Platform", ["All", "Resy", "OpenTable"])
+        neighborhoods = sorted(list(set([r.get('neighborhood', 'Unknown') for r in restaurants])))
+        neighborhood_filter = st.selectbox("Neighborhood", ["All Neighborhoods"] + neighborhoods, label_visibility="collapsed", key="neighborhood_filter_browse")
+        st.caption("Filter by neighborhood")
 
-    with col3:
-        sort_by = st.selectbox("Sort by", ["Name (A-Z)", "Neighborhood", "Cuisine"])
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Filter restaurants
     filtered = restaurants
@@ -1928,48 +2025,61 @@ else:
     if cuisine_filter != "All Cuisines":
         filtered = [r for r in filtered if r.get('cuisine') == cuisine_filter]
 
-    if platform_filter != "All":
-        filtered = [r for r in filtered if r.get('platform', 'resy').lower() == platform_filter.lower()]
+    if neighborhood_filter != "All Neighborhoods":
+        filtered = [r for r in filtered if r.get('neighborhood') == neighborhood_filter]
 
-    # Sort
-    if sort_by == "Name (A-Z)":
-        filtered = sorted(filtered, key=lambda x: x['name'])
-    elif sort_by == "Neighborhood":
-        filtered = sorted(filtered, key=lambda x: x.get('neighborhood', ''))
-    elif sort_by == "Cuisine":
-        filtered = sorted(filtered, key=lambda x: x.get('cuisine', ''))
+    # Sort by name by default
+    filtered = sorted(filtered, key=lambda x: x['name'])
 
     st.markdown(f"**{len(filtered)} restaurants**")
-    st.markdown("---")
 
-    # Display restaurants
+    # Display restaurants in grid
     if filtered:
-        for idx, restaurant in enumerate(filtered):
-            platform = restaurant.get('platform', 'resy')
+        # Use columns to create grid layout
+        cols_per_row = 3
+        for row_start in range(0, len(filtered), cols_per_row):
+            cols = st.columns(cols_per_row)
+            for col_idx in range(cols_per_row):
+                idx = row_start + col_idx
+                if idx < len(filtered):
+                    restaurant = filtered[idx]
 
-            # Restaurant card
-            with st.container():
-                st.markdown(f"""
-                <div class="restaurant-card">
-                    <div class="restaurant-header">
-                        <h3 class="restaurant-name">{restaurant['name']}</h3>
-                        <div class="restaurant-meta">
-                            <span>📍 {restaurant['neighborhood']}</span>
-                            <span>•</span>
-                            <span>🍽️ {restaurant['cuisine']}</span>
-                            <span>•</span>
-                            <span class="badge badge-{platform}">{platform.upper()}</span>
+                    with cols[col_idx]:
+                        # Get first letter for placeholder
+                        first_letter = restaurant['name'][0].upper()
+
+                        # Create clickable card
+                        if st.button(
+                            f"card_{idx}",
+                            key=f"browse_card_{idx}_{restaurant['venue_id']}",
+                            use_container_width=True,
+                            type="secondary"
+                        ):
+                            st.session_state.selected_restaurant = restaurant
+                            st.session_state.view_mode = 'detail'
+                            st.rerun()
+
+                        # Display restaurant info using markdown
+                        st.markdown(f"""
+                        <div class="restaurant-grid-card">
+                            <div class="restaurant-grid-image">
+                                {first_letter}
+                            </div>
+                            <div class="restaurant-grid-info">
+                                <div class="restaurant-grid-name">{restaurant['name']}</div>
+                                <div class="restaurant-grid-meta">
+                                    <div class="restaurant-grid-meta-item">
+                                        <span>📍</span>
+                                        <span>{restaurant.get('neighborhood', 'N/A')}</span>
+                                    </div>
+                                    <div class="restaurant-grid-meta-item">
+                                        <span>🍽️</span>
+                                        <span>{restaurant.get('cuisine', 'N/A')}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                if st.button(f"View availability →", key=f"browse_view_{idx}_{restaurant['venue_id']}", use_container_width=True):
-                    st.session_state.selected_restaurant = restaurant
-                    st.session_state.view_mode = 'detail'
-                    st.rerun()
-
-                st.markdown("<br>", unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div class="no-results">
