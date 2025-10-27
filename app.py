@@ -1242,7 +1242,17 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
         if api_key:
             api_key_source = "Environment Variable"
 
-    # Debug section (remove after fixing)
+    # Hardcoded place_ids for known restaurants (fallback)
+    KNOWN_PLACE_IDS = {
+        "Flour+Water": "ChIJd7zF4Am9j4ARXwqYr-rrZ0s",
+        "Jules": "ChIJ_____placeholder_for_jules",
+        "Izakaya Rintaro": "ChIJwc4gOgp-j4ARsKCdDZGDfb0",
+        "mijoté": "ChIJ_____placeholder_for_mijote",
+        "Liholiho Yacht Club": "ChIJY3Y2PHuAhYAR0C9nTVQwqKM",
+        "side a": "ChIJ_____placeholder_for_sidea"
+    }
+
+    # Debug section
     with st.expander("🔍 Google API Debug Info", expanded=False):
         if api_key:
             st.success(f"✅ API Key found from: {api_key_source}")
@@ -1251,6 +1261,10 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             st.error("❌ No API key found")
             st.info("Add to .streamlit/secrets.toml:\nGOOGLE_PLACES_API_KEY = \"your-key-here\"")
 
+        st.info(f"Restaurant: {restaurant['name']}")
+        if restaurant.get('google_place_id'):
+            st.info(f"Saved place_id: {restaurant.get('google_place_id')}")
+
     # Try to get Google data
     if api_key:
         if google_place_id:
@@ -1258,25 +1272,37 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             if not google_data:
                 st.warning(f"⚠️ API call failed for place_id: {google_place_id}")
         else:
-            # Try to search for the place with multiple name variations
-            search_names = [
-                restaurant['name'],
-                restaurant['name'].replace('+', ' + '),  # "Flour+Water" -> "Flour + Water"
-                restaurant['name'].replace('+', ' '),     # "Flour+Water" -> "Flour Water"
-            ]
+            # First try hardcoded place_id
+            if restaurant['name'] in KNOWN_PLACE_IDS and not KNOWN_PLACE_IDS[restaurant['name']].startswith("ChIJ_____placeholder"):
+                google_place_id = KNOWN_PLACE_IDS[restaurant['name']]
+                st.info(f"Using hardcoded place_id for {restaurant['name']}")
+                google_data = get_restaurant_google_data(google_place_id, api_key)
+                restaurant['google_place_id'] = google_place_id
+            else:
+                # Try to search for the place with multiple name variations
+                search_names = [
+                    restaurant['name'],
+                    restaurant['name'].replace('+', ' + '),  # "Flour+Water" -> "Flour + Water"
+                    restaurant['name'].replace('+', ' '),     # "Flour+Water" -> "Flour Water"
+                ]
 
-            for search_name in search_names:
-                google_place_id = search_restaurant_place_id(search_name, "San Francisco, CA", api_key)
-                if google_place_id:
-                    google_data = get_restaurant_google_data(google_place_id, api_key)
-                    # Save the place_id for future use
-                    restaurant['google_place_id'] = google_place_id
-                    if google_data:
-                        st.success(f"✅ Found Google data for {restaurant['name']}")
-                    break
+                # Enable debug mode in the expander
+                with st.expander("🔍 Detailed Search Debug", expanded=True):
+                    for search_name in search_names:
+                        st.markdown(f"**Trying name variation: '{search_name}'**")
+                        google_place_id = search_restaurant_place_id(search_name, "San Francisco, CA", api_key, debug=True)
+                        if google_place_id:
+                            google_data = get_restaurant_google_data(google_place_id, api_key)
+                            # Save the place_id for future use
+                            restaurant['google_place_id'] = google_place_id
+                            if google_data:
+                                st.success(f"✅ Found Google data for {restaurant['name']}")
+                            break
+                        st.markdown("---")
 
-            if not google_place_id:
-                st.warning(f"⚠️ Could not find Google place_id for {restaurant['name']}")
+                if not google_place_id:
+                    st.warning(f"⚠️ Could not find Google place_id for {restaurant['name']}")
+                    st.info("💡 If you know the place_id, you can add it to the KNOWN_PLACE_IDS dictionary in app.py")
     else:
         google_data = None
 
@@ -1352,17 +1378,31 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
         party_size = st.number_input("Party Size", min_value=1, max_value=20, value=2)
 
     with col2:
+        # Initialize selected date in session state if not present
+        if 'calendar_selected_date' not in st.session_state:
+            st.session_state.calendar_selected_date = date.today() + timedelta(days=7)
+
         reservation_date = st.date_input(
             "Date",
             min_value=date.today(),
-            value=date.today() + timedelta(days=7)
+            value=st.session_state.calendar_selected_date
         )
 
-    # Display availability calendar
-    calendar_html, availability_data, unreleased_dates = generate_availability_calendar(
-        restaurant, party_size, platform
-    )
-    st.markdown(calendar_html, unsafe_allow_html=True)
+    # Display interactive availability calendar
+    st.markdown("### Availability Calendar")
+    with st.spinner("Checking availability for the next 21 days..."):
+        availability_dict, unreleased_dates = generate_availability_calendar(
+            restaurant, party_size, platform
+        )
+
+    # Render interactive calendar
+    selected_calendar_date = render_interactive_calendar(availability_dict, date.today())
+
+    # If user clicked a date in calendar, update the reservation date
+    if selected_calendar_date and selected_calendar_date != st.session_state.calendar_selected_date:
+        st.session_state.calendar_selected_date = selected_calendar_date
+        reservation_date = selected_calendar_date
+        st.rerun()
 
     # Show unreleased dates clickable section
     if unreleased_dates:

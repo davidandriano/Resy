@@ -22,13 +22,14 @@ class GooglePlacesClient:
         if not self.api_key:
             st.warning("⚠️ Google Places API key not configured. Reviews and photos won't be available.")
 
-    def search_place(self, name: str, location: str = "San Francisco, CA") -> Optional[str]:
+    def search_place(self, name: str, location: str = "San Francisco, CA", debug: bool = False) -> Optional[str]:
         """
         Search for a place and get its place_id
 
         Args:
             name: Restaurant name
             location: Location (city, state)
+            debug: If True, print detailed debug information
 
         Returns:
             place_id if found, None otherwise
@@ -36,23 +37,51 @@ class GooglePlacesClient:
         if not self.api_key:
             return None
 
-        url = f"{self.BASE_URL}/textsearch/json"
-        params = {
-            "query": f"{name} {location}",
-            "key": self.api_key
-        }
+        # Try multiple search strategies
+        search_queries = [
+            f"{name} restaurant {location}",
+            f"{name} {location}",
+            f"{name} restaurant San Francisco",
+            f"{name} San Francisco",
+            name  # Just the name alone
+        ]
 
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        for query in search_queries:
+            url = f"{self.BASE_URL}/textsearch/json"
+            params = {
+                "query": query,
+                "key": self.api_key
+            }
 
-            if data.get("results"):
-                return data["results"][0].get("place_id")
-            return None
-        except Exception as e:
-            st.error(f"Error searching for place: {e}")
-            return None
+            try:
+                if debug:
+                    st.info(f"🔍 Searching with query: \"{query}\"")
+
+                response = requests.get(url, params=params)
+                response.raise_for_status()
+                data = response.json()
+
+                if debug:
+                    status = data.get("status")
+                    results_count = len(data.get("results", []))
+                    st.info(f"📊 API Status: {status}, Results: {results_count}")
+
+                    if results_count > 0:
+                        for idx, result in enumerate(data.get("results", [])[:3]):
+                            st.info(f"Result {idx+1}: {result.get('name')} - {result.get('formatted_address', 'No address')}")
+
+                if data.get("results"):
+                    place_id = data["results"][0].get("place_id")
+                    if debug:
+                        st.success(f"✅ Found place_id: {place_id}")
+                    return place_id
+
+            except Exception as e:
+                if debug:
+                    st.error(f"❌ Error searching with query '{query}': {e}")
+                continue
+
+        return None
 
     def get_place_details(self, place_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -149,7 +178,7 @@ def get_restaurant_google_data(place_id: str, api_key: str = None) -> Optional[D
 
 
 @st.cache_data(ttl=86400)  # Cache for 24 hours
-def search_restaurant_place_id(name: str, location: str = "San Francisco, CA", api_key: str = None) -> Optional[str]:
+def search_restaurant_place_id(name: str, location: str = "San Francisco, CA", api_key: str = None, debug: bool = False) -> Optional[str]:
     """
     Cached function to search for restaurant and get place_id
 
@@ -157,9 +186,10 @@ def search_restaurant_place_id(name: str, location: str = "San Francisco, CA", a
         name: Restaurant name
         location: Location
         api_key: Google API key
+        debug: If True, show detailed debug information
 
     Returns:
         place_id or None
     """
     client = GooglePlacesClient(api_key)
-    return client.search_place(name, location)
+    return client.search_place(name, location, debug=debug)
