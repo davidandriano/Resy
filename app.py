@@ -462,25 +462,34 @@ st.markdown("""
 
     /* Calendar improvements */
     .calendar-day-unreleased {
-        background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
-        border: 2px solid #f5af19;
-        color: white;
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        color: #767676;
         cursor: pointer;
         position: relative;
-        font-weight: 700;
+        font-weight: 500;
     }
 
     .calendar-day-unreleased:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(245, 175, 25, 0.4);
+        border-color: #ffc107;
     }
 
     .calendar-day-unreleased::after {
         content: "⚡";
         position: absolute;
         top: 2px;
-        right: 4px;
-        font-size: 0.9rem;
+        right: 2px;
+        font-size: 0.75rem;
+        background: #ffc107;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     .active-monitor-badge {
@@ -501,6 +510,251 @@ st.markdown("""
         font-size: 0.85rem;
         display: inline-block;
         margin: 0.5rem 0;
+    }
+
+    /* Resy-style bubble selectors */
+    .booking-bubbles {
+        display: flex;
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+        flex-wrap: wrap;
+    }
+
+    .booking-bubble {
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 120px;
+        text-align: center;
+    }
+
+    .booking-bubble:hover {
+        border-color: #1a1a1a;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .booking-bubble-label {
+        font-size: 0.75rem;
+        color: #767676;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .booking-bubble-value {
+        font-size: 1rem;
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+
+    /* Calendar modal */
+    .calendar-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .calendar-modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .calendar-modal-header {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #1a1a1a;
+    }
+
+    /* Compact calendar for bubble view */
+    .compact-calendar {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 1rem 0;
+    }
+
+    .compact-date-tile {
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        border-radius: 6px;
+        padding: 0.5rem;
+        min-width: 60px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .compact-date-tile:hover {
+        border-color: #1a1a1a;
+        transform: translateY(-2px);
+    }
+
+    .compact-date-tile-selected {
+        border-color: #0066cc;
+        background: #f0f8ff;
+    }
+
+    .compact-date-day {
+        font-size: 0.7rem;
+        color: #767676;
+        text-transform: uppercase;
+    }
+
+    .compact-date-num {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-top: 0.25rem;
+    }
+
+    .compact-date-available {
+        color: #0066cc;
+        font-weight: 700;
+    }
+
+    .compact-date-unavailable {
+        color: #dc3545;
+    }
+
+    .more-dates-btn {
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 1.25rem;
+        color: #767676;
+        transition: all 0.2s ease;
+    }
+
+    .more-dates-btn:hover {
+        border-color: #1a1a1a;
+        color: #1a1a1a;
+    }
+
+    /* Table Hunter Assistant - Always visible */
+    .table-hunter-panel {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        color: white;
+    }
+
+    .table-hunter-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .table-hunter-description {
+        font-size: 0.9rem;
+        opacity: 0.95;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+
+    .table-hunter-input {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Grid layout for restaurant browse */
+    .restaurant-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .restaurant-grid-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .restaurant-grid-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        transform: translateY(-4px);
+        border-color: #1a1a1a;
+    }
+
+    .restaurant-grid-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+    }
+
+    .restaurant-grid-info {
+        padding: 1.25rem;
+    }
+
+    .restaurant-grid-name {
+        font-family: 'Lora', serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.75rem;
+    }
+
+    .restaurant-grid-meta {
+        color: #767676;
+        font-size: 0.875rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .restaurant-grid-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Filter section */
+    .filter-section {
+        background: #fafafa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .filter-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #1a1a1a;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1124,19 +1378,11 @@ def render_interactive_calendar(availability_dict, start_date=None):
                     css_class = 'calendar-day-checking'
                     clickable = False
 
-                # Display as button if clickable
+                # Display as button if clickable, or styled div with lightning bolt for unreleased
                 if clickable and current_date >= start_date:
                     button_key = f"cal_{current_date.strftime('%Y%m%d')}"
 
-                    # Create styled button
-                    if state == 'available':
-                        button_style = "background: white; border: 1.5px solid #e5e5e5; color: #0066cc; font-weight: 700; cursor: pointer; padding: 0.75rem; border-radius: 6px; width: 100%;"
-                    elif state == 'unreleased':
-                        button_style = "background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%); border: 2px solid #f5af19; color: white; font-weight: 700; cursor: pointer; padding: 0.75rem; border-radius: 6px; width: 100%; position: relative;"
-                    else:
-                        button_style = "background: white; border: 1.5px solid #e5e5e5; color: #333; padding: 0.75rem; border-radius: 6px; width: 100%;"
-
-                    if st.button(display_text, key=button_key, use_container_width=True):
+                    if st.button(display_text, key=button_key, use_container_width=True, type="primary" if state == 'available' else "secondary"):
                         selected_date = current_date
                 else:
                     # Display as non-clickable div
@@ -1243,8 +1489,9 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             api_key_source = "Environment Variable"
 
     # Hardcoded place_ids for known restaurants (fallback)
+    # Note: These may need to be verified/updated if API calls fail
     KNOWN_PLACE_IDS = {
-        "Flour+Water": "ChIJd7zF4Am9j4ARXwqYr-rrZ0s",
+        "Flour+Water": "ChIJXWBgjQl-j4ARbD-iSSMfpGg",  # Try alternative place_id
         "Jules": "ChIJ_____placeholder_for_jules",
         "Izakaya Rintaro": "ChIJwc4gOgp-j4ARsKCdDZGDfb0",
         "mijoté": "ChIJ_____placeholder_for_mijote",
@@ -1253,22 +1500,32 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
     }
 
     # Debug section
-    with st.expander("🔍 Google API Debug Info", expanded=False):
+    with st.expander("🔍 Google API Debug Info", expanded=True):
         if api_key:
             st.success(f"✅ API Key found from: {api_key_source}")
             st.code(f"Key starts with: {api_key[:20]}...")
+
+            # Add API validation help
+            st.info("**Troubleshooting:** If API calls fail, check:\n"
+                   "1. Places API is enabled in Google Cloud Console\n"
+                   "2. Billing is enabled for the project\n"
+                   "3. API key has no restrictions, or allows Places API\n"
+                   "4. Quotas are not exceeded")
         else:
             st.error("❌ No API key found")
             st.info("Add to .streamlit/secrets.toml:\nGOOGLE_PLACES_API_KEY = \"your-key-here\"")
 
-        st.info(f"Restaurant: {restaurant['name']}")
+        st.info(f"**Restaurant:** {restaurant['name']}")
         if restaurant.get('google_place_id'):
-            st.info(f"Saved place_id: {restaurant.get('google_place_id')}")
+            st.info(f"**Saved place_id:** {restaurant.get('google_place_id')}")
+
+        if restaurant['name'] in KNOWN_PLACE_IDS:
+            st.info(f"**Hardcoded place_id available:** {KNOWN_PLACE_IDS[restaurant['name']]}")
 
     # Try to get Google data
     if api_key:
         if google_place_id:
-            google_data = get_restaurant_google_data(google_place_id, api_key)
+            google_data = get_restaurant_google_data(google_place_id, api_key, debug=True)
             if not google_data:
                 st.warning(f"⚠️ API call failed for place_id: {google_place_id}")
         else:
@@ -1276,7 +1533,7 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             if restaurant['name'] in KNOWN_PLACE_IDS and not KNOWN_PLACE_IDS[restaurant['name']].startswith("ChIJ_____placeholder"):
                 google_place_id = KNOWN_PLACE_IDS[restaurant['name']]
                 st.info(f"Using hardcoded place_id for {restaurant['name']}")
-                google_data = get_restaurant_google_data(google_place_id, api_key)
+                google_data = get_restaurant_google_data(google_place_id, api_key, debug=True)
                 restaurant['google_place_id'] = google_place_id
             else:
                 # Try to search for the place with multiple name variations
@@ -1292,7 +1549,7 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
                         st.markdown(f"**Trying name variation: '{search_name}'**")
                         google_place_id = search_restaurant_place_id(search_name, "San Francisco, CA", api_key, debug=True)
                         if google_place_id:
-                            google_data = get_restaurant_google_data(google_place_id, api_key)
+                            google_data = get_restaurant_google_data(google_place_id, api_key, debug=True)
                             # Save the place_id for future use
                             restaurant['google_place_id'] = google_place_id
                             if google_data:
@@ -1323,9 +1580,7 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             <span>•</span>
             <span>🍽️ {restaurant['cuisine']}</span>
             <span>•</span>
-            <span class="badge badge-{platform}">{platform.upper()}</span>
-            {review_html}
-        </div>
+            <span class="badge badge-{platform}">{platform.upper()}</span>{review_html}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1371,70 +1626,166 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
                     close_time = convert_to_12hour(day_hours.get('close', ''))
                     st.caption(f"**{day_display}**: {open_time} - {close_time}")
 
-    # Booking interface
-    col1, col2, col3 = st.columns([1, 1, 2])
+    # Initialize state
+    if 'calendar_selected_date' not in st.session_state:
+        st.session_state.calendar_selected_date = date.today() + timedelta(days=7)
+    if 'party_size' not in st.session_state:
+        st.session_state.party_size = 2
+    if 'show_calendar_modal' not in st.session_state:
+        st.session_state.show_calendar_modal = False
+
+    # Resy-style Booking Interface
+    st.markdown("### Make a Reservation")
+
+    # Bubble selectors for Guests and Date
+    col1, col2 = st.columns(2)
 
     with col1:
-        party_size = st.number_input("Party Size", min_value=1, max_value=20, value=2)
+        st.markdown('<div class="booking-bubble-label">GUESTS</div>', unsafe_allow_html=True)
+        party_size = st.selectbox(
+            "Guests",
+            options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            index=1,
+            key="party_size_select",
+            label_visibility="collapsed"
+        )
+        st.session_state.party_size = party_size
 
     with col2:
-        # Initialize selected date in session state if not present
-        if 'calendar_selected_date' not in st.session_state:
-            st.session_state.calendar_selected_date = date.today() + timedelta(days=7)
-
+        st.markdown('<div class="booking-bubble-label">DATE</div>', unsafe_allow_html=True)
         reservation_date = st.date_input(
             "Date",
             min_value=date.today(),
-            value=st.session_state.calendar_selected_date
+            value=st.session_state.calendar_selected_date,
+            key="date_picker",
+            label_visibility="collapsed"
         )
+        st.session_state.calendar_selected_date = reservation_date
 
-    # Display interactive availability calendar
-    st.markdown("### Availability Calendar")
-    with st.spinner("Checking availability for the next 21 days..."):
+    # Check availability for next 7 days (compact view) + full 21 days (for modal)
+    with st.spinner("Checking availability..."):
         availability_dict, unreleased_dates = generate_availability_calendar(
-            restaurant, party_size, platform
+            restaurant, party_size, platform, num_days=21
         )
 
-    # Render interactive calendar
-    selected_calendar_date = render_interactive_calendar(availability_dict, date.today())
+    # Compact calendar with next 7 days
+    st.markdown("### Select a Date")
 
-    # If user clicked a date in calendar, update the reservation date
-    if selected_calendar_date and selected_calendar_date != st.session_state.calendar_selected_date:
-        st.session_state.calendar_selected_date = selected_calendar_date
-        reservation_date = selected_calendar_date
-        st.rerun()
+    # Create compact calendar tiles
+    compact_dates = []
+    for i in range(7):
+        check_date = date.today() + timedelta(days=i)
+        compact_dates.append(check_date)
 
-    # Show unreleased dates clickable section
-    if unreleased_dates:
-        st.markdown("### ⚡ Set up Reservation Snatcher")
-        st.info(f"💡 Click on dates with ⚡ to automatically book when reservations are released")
+    # Display compact calendar
+    cols = st.columns([1, 1, 1, 1, 1, 1, 1, 0.5])
+    for idx, check_date in enumerate(compact_dates):
+        with cols[idx]:
+            avail_info = availability_dict.get(check_date, {'state': 'unknown'})
+            state = avail_info['state']
 
-        selected_unreleased_date = st.selectbox(
-            "Select a date to set up Snatcher",
-            options=[None] + unreleased_dates,
-            format_func=lambda x: "Choose a date..." if x is None else x.strftime('%B %d, %Y'),
-            key="unreleased_date_select"
-        )
+            # Determine styling
+            if state == 'available':
+                style_class = 'compact-date-available'
+            elif state == 'unavailable':
+                style_class = 'compact-date-unavailable'
+            else:
+                style_class = ''
 
-        if selected_unreleased_date:
-            release_info = restaurant.get('reservation_release', {})
-            days_in_advance = release_info.get('days_in_advance', 30)
-            release_time = release_info.get('time', '00:00')
-            release_date = selected_unreleased_date - timedelta(days=days_in_advance)
+            is_selected = check_date == st.session_state.calendar_selected_date
 
-            col1, col2 = st.columns(2)
-            with col1:
-                snatch_time = st.selectbox(
-                    "Preferred Time",
-                    ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30"],
-                    format_func=convert_to_12hour,
-                    key="snatch_time_quick"
-                )
+            day_name = check_date.strftime('%a').upper()
+            day_num = check_date.day
+
+            # Add lightning bolt for unreleased dates
+            display_text = f"{day_name}  \n{day_num}"
+            if state == 'unreleased':
+                display_text = f"{day_name}  \n{day_num} ⚡"
+
+            # Create clickable tile
+            if st.button(
+                display_text,
+                key=f"compact_date_{check_date}",
+                use_container_width=True,
+                type="primary" if is_selected else "secondary"
+            ):
+                st.session_state.calendar_selected_date = check_date
+
+                # If unreleased, show snatcher
+                if state == 'unreleased':
+                    st.session_state.show_snatcher_for_date = check_date
+
+                st.rerun()
+
+    # "..." button to open modal with full calendar
+    with cols[7]:
+        if st.button("⋯", key="open_calendar_modal", use_container_width=True):
+            st.session_state.show_calendar_modal = True
+            st.rerun()
+
+    # Modal calendar (if opened)
+    if st.session_state.show_calendar_modal:
+        with st.container():
+            col1, col2, col3 = st.columns([1, 3, 1])
             with col2:
-                snatch_party = st.number_input("Party Size", min_value=1, max_value=20, value=party_size, key="snatch_party_quick")
+                st.markdown("---")
+                st.markdown("### Full Calendar View")
 
-            st.success(f"✅ Reservations for {selected_unreleased_date.strftime('%B %d')} will be released on **{release_date.strftime('%B %d, %Y')}** at **{convert_to_12hour(release_time)}**")
+                # Render full interactive calendar
+                selected_calendar_date = render_interactive_calendar(availability_dict, date.today())
 
+                # If user clicked a date in calendar, update the reservation date
+                if selected_calendar_date:
+                    st.session_state.calendar_selected_date = selected_calendar_date
+                    reservation_date = selected_calendar_date
+                    st.session_state.show_calendar_modal = False
+
+                    # Check if unreleased date
+                    avail_info = availability_dict.get(selected_calendar_date, {'state': 'unknown'})
+                    if avail_info['state'] == 'unreleased':
+                        st.session_state.show_snatcher_for_date = selected_calendar_date
+
+                    st.rerun()
+
+                if st.button("Close Calendar", key="close_calendar_modal", use_container_width=True):
+                    st.session_state.show_calendar_modal = False
+                    st.rerun()
+
+                st.markdown("---")
+
+    # Resy Snatcher - trigger when unreleased date is clicked or selected
+    if 'show_snatcher_for_date' not in st.session_state:
+        st.session_state.show_snatcher_for_date = None
+
+    # Check if selected date is unreleased
+    selected_avail = availability_dict.get(st.session_state.calendar_selected_date, {'state': 'unknown'})
+    if selected_avail['state'] == 'unreleased' or st.session_state.show_snatcher_for_date:
+        selected_unreleased_date = st.session_state.show_snatcher_for_date or st.session_state.calendar_selected_date
+
+        st.markdown("---")
+        st.markdown("### ⚡ Reservation Snatcher")
+        st.info(f"💡 **{selected_unreleased_date.strftime('%B %d, %Y')}** isn't released yet! Set up a Snatcher to auto-book when it drops.")
+
+        release_info = restaurant.get('reservation_release', {})
+        days_in_advance = release_info.get('days_in_advance', 30)
+        release_time = release_info.get('time', '00:00')
+        release_date = selected_unreleased_date - timedelta(days=days_in_advance)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            snatch_time = st.selectbox(
+                "Preferred Time",
+                ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30"],
+                format_func=convert_to_12hour,
+                key="snatch_time_quick"
+            )
+        with col2:
+            snatch_party = st.number_input("Party Size", min_value=1, max_value=20, value=party_size, key="snatch_party_quick")
+
+        st.success(f"✅ Reservations will be released on **{release_date.strftime('%B %d, %Y')}** at **{convert_to_12hour(release_time)}**")
+
+        col1, col2 = st.columns([3, 1])
+        with col1:
             if st.button("⚡ Activate Snatcher", type="primary", use_container_width=True, key="activate_snatcher_quick"):
                 snatch_id = f"{restaurant['venue_id']}_{selected_unreleased_date}_{int(time.time())}"
                 st.session_state.active_snatchers[snatch_id] = {
@@ -1447,8 +1798,15 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
                     'platform': platform,
                     'created': datetime.now()
                 }
-                st.success(f"⚡ Snatcher activated! Will attempt to book on {release_date.strftime('%B %d')} at {convert_to_12hour(release_time)}")
+                st.session_state.show_snatcher_for_date = None
+                st.success(f"⚡ Snatcher activated!")
                 st.rerun()
+        with col2:
+            if st.button("Cancel", key="cancel_snatcher_setup"):
+                st.session_state.show_snatcher_for_date = None
+                st.rerun()
+
+        st.markdown("---")
 
     # Check if authenticated for this platform
     is_authenticated = (
@@ -1506,62 +1864,68 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
 
             st.markdown('</div>', unsafe_allow_html=True)
         else:
-            # No availability - show chatbot assistant
-            st.markdown("""
-            <div class="chatbot-container">
-                <div class="chatbot-message">
-                    <strong>🎯 Table Hunter Assistant</strong><br><br>
-                    Don't see a reservation for the date or time you're looking for? I can help!<br><br>
-                    Use my <strong>Table Hunter</strong> feature to automatically snag reservations when they become available from cancellations.
-                    Just tell me what date, time, and number of guests you're looking for, and I'll do the rest of the work and let you know when I find something!
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.warning("No availability found for this date.")
 
-            # Chatbot-style input
-            hunter_request = st.text_area(
-                "Tell me what you're looking for...",
-                placeholder=f"Example: I'm looking for a table for 2 on {(reservation_date + timedelta(days=1)).strftime('%A, %B %d')} around 7:30 PM",
-                key="hunter_request_text",
-                height=100
-            )
+    # Table Hunter - Always visible with sleeker UI
+    st.markdown("---")
+    st.markdown("""
+    <div class="table-hunter-panel">
+        <div class="table-hunter-title">
+            🎯 Table Hunter
+        </div>
+        <div class="table-hunter-description">
+            Can't find the time you want? Activate Table Hunter to automatically monitor for cancellations and notify you when a reservation becomes available.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-            if st.button("🚀 Activate Table Hunter", type="primary", use_container_width=True, key="start_hunter_chatbot"):
-                if hunter_request:
-                    # Parse the natural language request
-                    parsed = parse_reservation_request(hunter_request)
+    hunter_request = st.text_area(
+        "Tell me what you're looking for...",
+        placeholder=f"Example: I'm looking for a table for 2 on {(reservation_date if is_authenticated else date.today() + timedelta(days=7)).strftime('%A, %B %d')} around 7:30 PM",
+        key="hunter_request_text",
+        height=80
+    )
 
-                    # Create hunters for each date found
-                    hunters_created = 0
-                    dates_to_hunt = parsed['dates'] if parsed['dates'] else [reservation_date]
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.button("🚀 Activate Table Hunter", type="primary", use_container_width=True, key="start_hunter_chatbot"):
+            if hunter_request:
+                # Parse the natural language request
+                parsed = parse_reservation_request(hunter_request)
 
-                    for hunt_date in dates_to_hunt[:5]:  # Limit to 5 dates to avoid too many hunters
-                        hunt_id = f"{restaurant['venue_id']}_{hunt_date}_{int(time.time())}_{hunters_created}"
-                        st.session_state.active_hunters[hunt_id] = {
-                            'restaurant': restaurant,
-                            'date': hunt_date,
-                            'times': parsed['times'],
-                            'party_size': parsed['party_size'],
-                            'platform': platform,
-                            'started': datetime.now(),
-                            'checks': 0,
-                            'interval': "Every 1 minute",
-                            'user_request': hunter_request
-                        }
-                        hunters_created += 1
+                # Create hunters for each date found
+                hunters_created = 0
+                dates_to_hunt = parsed['dates'] if parsed['dates'] else [reservation_date if is_authenticated else date.today() + timedelta(days=7)]
 
-                    # Show what was parsed
-                    dates_str = ", ".join([d.strftime('%b %d') for d in dates_to_hunt[:5]])
-                    times_str = ", ".join([convert_to_12hour(t) for t in parsed['times'][:3]])
-                    if len(parsed['times']) > 3:
-                        times_str += f" +{len(parsed['times'])-3} more"
+                for hunt_date in dates_to_hunt[:5]:  # Limit to 5 dates to avoid too many hunters
+                    hunt_id = f"{restaurant['venue_id']}_{hunt_date}_{int(time.time())}_{hunters_created}"
+                    st.session_state.active_hunters[hunt_id] = {
+                        'restaurant': restaurant,
+                        'date': hunt_date,
+                        'times': parsed['times'],
+                        'party_size': parsed['party_size'],
+                        'platform': platform,
+                        'started': datetime.now(),
+                        'checks': 0,
+                        'interval': "Every 1 minute",
+                        'user_request': hunter_request
+                    }
+                    hunters_created += 1
 
-                    st.success(f"🎯 Table Hunter activated for {parsed['party_size']} guests!")
-                    st.info(f"**Hunting on:** {dates_str}\n\n**Times:** {times_str}")
-                    st.info("💡 Tip: Keep this page open or check back periodically for updates.")
-                    st.rerun()
-                else:
-                    st.warning("Please tell me what you're looking for!")
+                # Show what was parsed
+                dates_str = ", ".join([d.strftime('%b %d') for d in dates_to_hunt[:5]])
+                times_str = ", ".join([convert_to_12hour(t) for t in parsed['times'][:3]])
+                if len(parsed['times']) > 3:
+                    times_str += f" +{len(parsed['times'])-3} more"
+
+                st.success(f"🎯 Table Hunter activated for {parsed['party_size']} guests!")
+                st.info(f"**Hunting on:** {dates_str}\n\n**Times:** {times_str}")
+                st.info("💡 Tip: Keep this page open or check back periodically for updates.")
+                st.rerun()
+            else:
+                st.warning("Please tell me what you're looking for!")
+    with col2:
+        pass  # Empty column for spacing
 
     # Display active monitors
     if is_authenticated and (st.session_state.active_hunters or st.session_state.active_snatchers):
@@ -1630,19 +1994,24 @@ else:
     restaurants = db.get("san_francisco", [])
 
     # Filters
-    st.markdown("### Explore Restaurants")
+    st.markdown("### Discover Restaurants")
 
-    col1, col2, col3 = st.columns([2, 1, 1])
+    # Filter section with cleaner design
+    st.markdown('<div class="filter-section">', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
 
     with col1:
         cuisines = get_cuisines()
-        cuisine_filter = st.selectbox("Cuisine", ["All Cuisines"] + cuisines)
+        cuisine_filter = st.selectbox("Cuisine", ["All Cuisines"] + cuisines, label_visibility="collapsed", key="cuisine_filter_browse")
+        st.caption("Filter by cuisine")
 
     with col2:
-        platform_filter = st.selectbox("Platform", ["All", "Resy", "OpenTable"])
+        neighborhoods = sorted(list(set([r.get('neighborhood', 'Unknown') for r in restaurants])))
+        neighborhood_filter = st.selectbox("Neighborhood", ["All Neighborhoods"] + neighborhoods, label_visibility="collapsed", key="neighborhood_filter_browse")
+        st.caption("Filter by neighborhood")
 
-    with col3:
-        sort_by = st.selectbox("Sort by", ["Name (A-Z)", "Neighborhood", "Cuisine"])
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Filter restaurants
     filtered = restaurants
@@ -1656,48 +2025,61 @@ else:
     if cuisine_filter != "All Cuisines":
         filtered = [r for r in filtered if r.get('cuisine') == cuisine_filter]
 
-    if platform_filter != "All":
-        filtered = [r for r in filtered if r.get('platform', 'resy').lower() == platform_filter.lower()]
+    if neighborhood_filter != "All Neighborhoods":
+        filtered = [r for r in filtered if r.get('neighborhood') == neighborhood_filter]
 
-    # Sort
-    if sort_by == "Name (A-Z)":
-        filtered = sorted(filtered, key=lambda x: x['name'])
-    elif sort_by == "Neighborhood":
-        filtered = sorted(filtered, key=lambda x: x.get('neighborhood', ''))
-    elif sort_by == "Cuisine":
-        filtered = sorted(filtered, key=lambda x: x.get('cuisine', ''))
+    # Sort by name by default
+    filtered = sorted(filtered, key=lambda x: x['name'])
 
     st.markdown(f"**{len(filtered)} restaurants**")
-    st.markdown("---")
 
-    # Display restaurants
+    # Display restaurants in grid
     if filtered:
-        for idx, restaurant in enumerate(filtered):
-            platform = restaurant.get('platform', 'resy')
+        # Use columns to create grid layout
+        cols_per_row = 3
+        for row_start in range(0, len(filtered), cols_per_row):
+            cols = st.columns(cols_per_row)
+            for col_idx in range(cols_per_row):
+                idx = row_start + col_idx
+                if idx < len(filtered):
+                    restaurant = filtered[idx]
 
-            # Restaurant card
-            with st.container():
-                st.markdown(f"""
-                <div class="restaurant-card">
-                    <div class="restaurant-header">
-                        <h3 class="restaurant-name">{restaurant['name']}</h3>
-                        <div class="restaurant-meta">
-                            <span>📍 {restaurant['neighborhood']}</span>
-                            <span>•</span>
-                            <span>🍽️ {restaurant['cuisine']}</span>
-                            <span>•</span>
-                            <span class="badge badge-{platform}">{platform.upper()}</span>
+                    with cols[col_idx]:
+                        # Get first letter for placeholder
+                        first_letter = restaurant['name'][0].upper()
+
+                        # Create clickable card
+                        if st.button(
+                            f"card_{idx}",
+                            key=f"browse_card_{idx}_{restaurant['venue_id']}",
+                            use_container_width=True,
+                            type="secondary"
+                        ):
+                            st.session_state.selected_restaurant = restaurant
+                            st.session_state.view_mode = 'detail'
+                            st.rerun()
+
+                        # Display restaurant info using markdown
+                        st.markdown(f"""
+                        <div class="restaurant-grid-card">
+                            <div class="restaurant-grid-image">
+                                {first_letter}
+                            </div>
+                            <div class="restaurant-grid-info">
+                                <div class="restaurant-grid-name">{restaurant['name']}</div>
+                                <div class="restaurant-grid-meta">
+                                    <div class="restaurant-grid-meta-item">
+                                        <span>📍</span>
+                                        <span>{restaurant.get('neighborhood', 'N/A')}</span>
+                                    </div>
+                                    <div class="restaurant-grid-meta-item">
+                                        <span>🍽️</span>
+                                        <span>{restaurant.get('cuisine', 'N/A')}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                if st.button(f"View availability →", key=f"browse_view_{idx}_{restaurant['venue_id']}", use_container_width=True):
-                    st.session_state.selected_restaurant = restaurant
-                    st.session_state.view_mode = 'detail'
-                    st.rerun()
-
-                st.markdown("<br>", unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div class="no-results">

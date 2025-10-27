@@ -83,17 +83,20 @@ class GooglePlacesClient:
 
         return None
 
-    def get_place_details(self, place_id: str) -> Optional[Dict[str, Any]]:
+    def get_place_details(self, place_id: str, debug: bool = False) -> Optional[Dict[str, Any]]:
         """
         Get detailed information about a place
 
         Args:
             place_id: Google Places ID
+            debug: If True, show detailed error information
 
         Returns:
             Dictionary with place details or None
         """
         if not self.api_key or not place_id:
+            if debug:
+                st.error("❌ Missing API key or place_id")
             return None
 
         url = f"{self.BASE_URL}/details/json"
@@ -108,11 +111,22 @@ class GooglePlacesClient:
             response.raise_for_status()
             data = response.json()
 
-            if data.get("result"):
+            status = data.get("status")
+
+            if debug:
+                st.info(f"📊 API Response Status: {status}")
+                if status != "OK":
+                    error_msg = data.get("error_message", "No error message provided")
+                    st.error(f"❌ API Error: {error_msg}")
+                    st.code(f"Response: {data}")
+
+            if status == "OK" and data.get("result"):
                 return data["result"]
+
             return None
         except Exception as e:
-            st.error(f"Error getting place details: {e}")
+            if debug:
+                st.error(f"❌ Exception getting place details: {e}")
             return None
 
     def get_photo_url(self, photo_reference: str, max_width: int = 400) -> Optional[str]:
@@ -162,19 +176,20 @@ class GooglePlacesClient:
 
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
-def get_restaurant_google_data(place_id: str, api_key: str = None) -> Optional[Dict]:
+def get_restaurant_google_data(place_id: str, api_key: str = None, debug: bool = False) -> Optional[Dict]:
     """
     Cached function to get Google Places data for a restaurant
 
     Args:
         place_id: Google Places ID
         api_key: Google API key
+        debug: If True, show detailed debug information
 
     Returns:
         Dictionary with Google data or None
     """
     client = GooglePlacesClient(api_key)
-    return client.get_place_details(place_id)
+    return client.get_place_details(place_id, debug=debug)
 
 
 @st.cache_data(ttl=86400)  # Cache for 24 hours
