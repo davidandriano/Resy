@@ -355,27 +355,37 @@ st.markdown("""
     }
 
     .calendar-day-available {
-        background: #e8f5e9;
-        border: 1.5px solid #4caf50;
-        color: #2e7d32;
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        color: #0066cc;
+        font-weight: 700;
         cursor: pointer;
     }
 
     .calendar-day-available:hover {
-        background: #c8e6c9;
-        transform: translateY(-2px);
+        background: #f0f8ff;
+        border-color: #0066cc;
+        transform: translateY(-1px);
     }
 
     .calendar-day-unavailable {
-        background: #ffebee;
-        border: 1.5px solid #f44336;
-        color: #c62828;
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        color: #dc3545;
+        font-weight: 400;
+    }
+
+    .calendar-day-past {
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        color: #999;
+        text-decoration: line-through;
     }
 
     .calendar-day-closed {
-        background: #f5f5f5;
-        border: 1.5px solid #e0e0e0;
-        color: #9e9e9e;
+        background: white;
+        border: 1.5px solid #e5e5e5;
+        color: #999;
         text-decoration: line-through;
     }
 
@@ -383,6 +393,26 @@ st.markdown("""
         background: white;
         border: 1.5px dashed #e5e5e5;
         color: #767676;
+    }
+
+    .lightning-badge {
+        position: relative;
+    }
+
+    .lightning-badge::after {
+        content: "⚡";
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        background: #ffc107;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     .calendar-legend {
@@ -942,19 +972,20 @@ def run_active_snatchers():
             # Remove snatcher after execution attempt
             del st.session_state.active_snatchers[snatch_id]
 
-def generate_availability_calendar(restaurant, party_size, platform, start_date=None, num_days=14):
+def generate_availability_calendar(restaurant, party_size, platform, start_date=None, num_days=21):
     """
-    Generate HTML for availability calendar with color coding including unreleased dates
+    Generate INTERACTIVE availability calendar that actually checks availability
 
     Args:
         restaurant: Restaurant data dict
         party_size: Number of people
         platform: 'resy' or 'opentable'
         start_date: Start date (defaults to today)
-        num_days: Number of days to show
+        num_days: Number of days to check (default 21 = 3 weeks)
 
     Returns:
-        Tuple of (html_string, availability_data, unreleased_dates)
+        Tuple of (availability_dict, unreleased_dates)
+        availability_dict: {date: {'has_slots': bool, 'slots': list, 'state': str}}
     """
     if start_date is None:
         start_date = date.today()
@@ -966,86 +997,176 @@ def generate_availability_calendar(restaurant, party_size, platform, start_date=
     # Calculate the latest date for which reservations are currently available
     latest_available_date = start_date + timedelta(days=days_in_advance)
 
-    # Build calendar HTML
-    html = '<div class="availability-calendar">'
-    html += '<div class="calendar-header">Availability Calendar (Next 2 Weeks)</div>'
-    html += '<div class="calendar-grid">'
+    # Check if authenticated
+    is_auth = (
+        (platform == "resy" and st.session_state.resy_authenticated) or
+        (platform == "opentable" and st.session_state.opentable_authenticated)
+    )
 
-    # Day headers
-    day_headers = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    for day_header in day_headers:
-        html += f'<div class="calendar-day calendar-day-header">{day_header}</div>'
-
-    # Find the first Monday to start the calendar
-    days_to_subtract = start_date.weekday()  # 0 = Monday, 6 = Sunday
-    calendar_start = start_date - timedelta(days=days_to_subtract)
-
-    # Generate calendar days
-    availability_data = {}
+    availability_dict = {}
     unreleased_dates = []
-    current_date = calendar_start
 
-    # Show enough weeks to cover num_days
-    total_days_to_show = ((num_days + days_to_subtract) // 7 + 1) * 7
+    # Check availability for each day
+    for day_offset in range(num_days):
+        check_date = start_date + timedelta(days=day_offset)
 
-    for i in range(total_days_to_show):
-        current_date = calendar_start + timedelta(days=i)
-
-        # Check if this date is in the future or today
-        is_past = current_date < start_date
-        is_open = is_restaurant_open(restaurant, current_date)
-        is_unreleased = current_date > latest_available_date
-
-        # Format date for display
-        day_num = current_date.day
-        month_str = current_date.strftime('%b') if current_date.day == 1 or i == 0 else ''
-        display_text = f"{month_str} {day_num}" if month_str else str(day_num)
+        # Determine state
+        is_past = check_date < start_date
+        is_open = is_restaurant_open(restaurant, check_date)
+        is_unreleased = check_date > latest_available_date
 
         if is_past:
-            # Past dates - show as disabled
-            html += f'<div class="calendar-day calendar-day-closed">{display_text}</div>'
-        elif not is_open:
-            # Restaurant closed
-            html += f'<div class="calendar-day calendar-day-closed" title="Closed">{display_text}</div>'
-            availability_data[current_date] = 'closed'
-        elif is_unreleased:
-            # Reservations not yet released - show with lightning bolt
-            date_str = current_date.strftime('%Y-%m-%d')
-            html += f'<div class="calendar-day calendar-day-unreleased" data-date="{date_str}" title="Reservations not yet released - click to set up Snatcher">{display_text}</div>'
-            availability_data[current_date] = 'unreleased'
-            unreleased_dates.append(current_date)
-        else:
-            # Will check availability (shows as "checking" initially)
-            html += f'<div class="calendar-day calendar-day-checking" title="Click to check">{display_text}</div>'
-            availability_data[current_date] = 'checking'
+            state = 'past'
+            availability_dict[check_date] = {'has_slots': False, 'slots': [], 'state': 'past'}
 
-    html += '</div>'
+        elif not is_open:
+            state = 'closed'
+            availability_dict[check_date] = {'has_slots': False, 'slots': [], 'state': 'closed'}
+
+        elif is_unreleased:
+            state = 'unreleased'
+            availability_dict[check_date] = {'has_slots': False, 'slots': [], 'state': 'unreleased'}
+            unreleased_dates.append(check_date)
+
+        elif is_auth:
+            # Actually check availability!
+            try:
+                slots, error = check_availability(
+                    restaurant['venue_id'],
+                    party_size,
+                    check_date,
+                    platform
+                )
+
+                if error:
+                    state = 'error'
+                    availability_dict[check_date] = {'has_slots': False, 'slots': [], 'state': 'error'}
+                elif slots and len(slots) > 0:
+                    state = 'available'
+                    availability_dict[check_date] = {'has_slots': True, 'slots': slots, 'state': 'available'}
+                else:
+                    state = 'unavailable'
+                    availability_dict[check_date] = {'has_slots': False, 'slots': [], 'state': 'unavailable'}
+
+            except Exception as e:
+                state = 'error'
+                availability_dict[check_date] = {'has_slots': False, 'slots': [], 'state': 'error'}
+
+        else:
+            # Not authenticated - can't check
+            state = 'unknown'
+            availability_dict[check_date] = {'has_slots': False, 'slots': [], 'state': 'unknown'}
+
+    return availability_dict, unreleased_dates
+
+def render_interactive_calendar(availability_dict, start_date=None):
+    """
+    Render interactive calendar using Streamlit buttons with availability data
+
+    Args:
+        availability_dict: Dict from generate_availability_calendar
+        start_date: Starting date (defaults to today)
+
+    Returns:
+        selected_date or None
+    """
+    if start_date is None:
+        start_date = date.today()
+
+    st.markdown('<div class="availability-calendar">', unsafe_allow_html=True)
+    st.markdown('<div class="calendar-header">Interactive Availability Calendar</div>', unsafe_allow_html=True)
+
+    # Find the first Monday
+    days_to_subtract = start_date.weekday()
+    calendar_start = start_date - timedelta(days=days_to_subtract)
+
+    # Day headers
+    cols = st.columns(7)
+    day_headers = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    for idx, day_name in enumerate(day_headers):
+        with cols[idx]:
+            st.markdown(f'<div style="text-align: center; font-weight: 700; color: #767676; font-size: 0.75rem; padding: 0.5rem;">{day_name}</div>', unsafe_allow_html=True)
+
+    # Calendar days - show 3 weeks
+    selected_date = None
+    for week in range(3):
+        cols = st.columns(7)
+        for day_idx in range(7):
+            current_date = calendar_start + timedelta(days=week * 7 + day_idx)
+
+            with cols[day_idx]:
+                # Get availability info
+                avail_info = availability_dict.get(current_date, {'state': 'unknown'})
+                state = avail_info['state']
+
+                # Format display
+                day_num = current_date.day
+                month_str = current_date.strftime('%b') if current_date.day == 1 or (week == 0 and day_idx == 0) else ''
+                display_text = f"{month_str} {day_num}" if month_str else str(day_num)
+
+                # Determine style class
+                if state == 'available':
+                    css_class = 'calendar-day-available'
+                    clickable = True
+                elif state == 'unavailable':
+                    css_class = 'calendar-day-unavailable'
+                    clickable = False
+                elif state == 'past':
+                    css_class = 'calendar-day-past'
+                    clickable = False
+                elif state == 'closed':
+                    css_class = 'calendar-day-closed'
+                    clickable = False
+                elif state == 'unreleased':
+                    css_class = 'calendar-day-unreleased lightning-badge'
+                    clickable = True
+                else:
+                    css_class = 'calendar-day-checking'
+                    clickable = False
+
+                # Display as button if clickable
+                if clickable and current_date >= start_date:
+                    button_key = f"cal_{current_date.strftime('%Y%m%d')}"
+
+                    # Create styled button
+                    if state == 'available':
+                        button_style = "background: white; border: 1.5px solid #e5e5e5; color: #0066cc; font-weight: 700; cursor: pointer; padding: 0.75rem; border-radius: 6px; width: 100%;"
+                    elif state == 'unreleased':
+                        button_style = "background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%); border: 2px solid #f5af19; color: white; font-weight: 700; cursor: pointer; padding: 0.75rem; border-radius: 6px; width: 100%; position: relative;"
+                    else:
+                        button_style = "background: white; border: 1.5px solid #e5e5e5; color: #333; padding: 0.75rem; border-radius: 6px; width: 100%;"
+
+                    if st.button(display_text, key=button_key, use_container_width=True):
+                        selected_date = current_date
+                else:
+                    # Display as non-clickable div
+                    st.markdown(f'<div class="calendar-day {css_class}">{display_text}</div>', unsafe_allow_html=True)
 
     # Legend
-    html += '''
+    st.markdown('''
     <div class="calendar-legend">
         <div class="legend-item">
-            <div class="legend-box" style="background: #e8f5e9; border-color: #4caf50;"></div>
+            <div class="legend-box" style="border-color: #0066cc;"><strong style="color: #0066cc;">15</strong></div>
             <span>Available</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: #ffebee; border-color: #f44336;"></div>
+            <div class="legend-box" style="border-color: #dc3545;"><span style="color: #dc3545;">15</span></div>
             <span>No Availability</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%); border-color: #f5af19;"></div>
-            <span>⚡ Not Yet Released</span>
+            <div class="legend-box" style="background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);"><span style="color: white;">⚡</span></div>
+            <span>Not Yet Released</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box" style="background: #f5f5f5; border-color: #e0e0e0;"></div>
-            <span>Closed</span>
+            <div class="legend-box" style="border-color: #999;"><del style="color: #999;">15</del></div>
+            <span>Closed/Past</span>
         </div>
     </div>
-    '''
+    ''', unsafe_allow_html=True)
 
-    html += '</div>'
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    return html, availability_data, unreleased_dates
+    return selected_date
 
 # Run background monitors
 run_active_hunters()
