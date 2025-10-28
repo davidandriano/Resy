@@ -373,6 +373,12 @@ st.markdown("""
         border: 1.5px solid #e5e5e5;
         color: #dc3545;
         font-weight: 400;
+        cursor: pointer;
+    }
+
+    .calendar-day-unavailable:hover {
+        background: #fff5f5;
+        border-color: #dc3545;
     }
 
     .calendar-day-past {
@@ -693,16 +699,17 @@ st.markdown("""
     .restaurant-grid-card {
         background: white;
         border: 1px solid #e5e5e5;
-        border-radius: 12px;
+        border-radius: 12px 12px 0 0;
         overflow: hidden;
         transition: all 0.3s ease;
         cursor: pointer;
+        margin-bottom: 0;
     }
 
     .restaurant-grid-card:hover {
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        transform: translateY(-4px);
-        border-color: #1a1a1a;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+        border-color: #ccc;
     }
 
     .restaurant-grid-image {
@@ -1358,13 +1365,14 @@ def render_interactive_calendar(availability_dict, start_date=None):
                 month_str = current_date.strftime('%b') if current_date.day == 1 or (week == 0 and day_idx == 0) else ''
                 display_text = f"{month_str} {day_num}" if month_str else str(day_num)
 
-                # Determine style class
+                # Determine style class and clickability
+                # Make all future dates clickable (available, unavailable, unreleased)
                 if state == 'available':
                     css_class = 'calendar-day-available'
                     clickable = True
                 elif state == 'unavailable':
                     css_class = 'calendar-day-unavailable'
-                    clickable = False
+                    clickable = True  # Now clickable!
                 elif state == 'past':
                     css_class = 'calendar-day-past'
                     clickable = False
@@ -1505,12 +1513,31 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
             st.success(f"✅ API Key found from: {api_key_source}")
             st.code(f"Key starts with: {api_key[:20]}...")
 
-            # Add API validation help
-            st.info("**Troubleshooting:** If API calls fail, check:\n"
-                   "1. Places API is enabled in Google Cloud Console\n"
-                   "2. Billing is enabled for the project\n"
-                   "3. API key has no restrictions, or allows Places API\n"
-                   "4. Quotas are not exceeded")
+            # Add specific fix for REQUEST_DENIED error
+            st.error("**⚠️ CRITICAL FIX REQUIRED:**")
+            st.markdown("""
+            **If you see "REQUEST_DENIED" error:**
+
+            The error "API keys with referer restrictions cannot be used with this API" means your API key has website restrictions enabled.
+
+            **To fix this:**
+            1. Go to [Google Cloud Console API Credentials](https://console.cloud.google.com/apis/credentials)
+            2. Find your API key and click on it
+            3. Under "API restrictions", select **"Don't restrict key"** (or at minimum, ensure "Places API" is in the list)
+            4. Under "Application restrictions", select **"None"** (this is the critical fix)
+            5. Click "Save"
+            6. Wait 1-2 minutes for changes to propagate
+            7. Refresh this page
+
+            **Alternative:** Create a new API key with no restrictions.
+            """)
+
+            # Add general troubleshooting
+            st.info("**General Troubleshooting:**\n"
+                   "1. Places API (New) must be enabled in Google Cloud Console\n"
+                   "2. Billing must be enabled for the project\n"
+                   "3. API key must have NO application restrictions\n"
+                   "4. Check quotas are not exceeded")
         else:
             st.error("❌ No API key found")
             st.info("Add to .streamlit/secrets.toml:\nGOOGLE_PLACES_API_KEY = \"your-key-here\"")
@@ -1662,10 +1689,13 @@ if st.session_state.view_mode == 'detail' and st.session_state.selected_restaura
         )
         st.session_state.calendar_selected_date = reservation_date
 
-    # Check availability for next 7 days (compact view) + full 21 days (for modal)
+    # Check availability for next 7 days (compact view) for faster loading
+    # Only check 21 days when modal is opened
+    num_days_to_check = 21 if st.session_state.show_calendar_modal else 7
+
     with st.spinner("Checking availability..."):
         availability_dict, unreleased_dates = generate_availability_calendar(
-            restaurant, party_size, platform, num_days=21
+            restaurant, party_size, platform, num_days=num_days_to_check
         )
 
     # Compact calendar with next 7 days
@@ -2048,18 +2078,7 @@ else:
                         # Get first letter for placeholder
                         first_letter = restaurant['name'][0].upper()
 
-                        # Create clickable card
-                        if st.button(
-                            f"card_{idx}",
-                            key=f"browse_card_{idx}_{restaurant['venue_id']}",
-                            use_container_width=True,
-                            type="secondary"
-                        ):
-                            st.session_state.selected_restaurant = restaurant
-                            st.session_state.view_mode = 'detail'
-                            st.rerun()
-
-                        # Display restaurant info using markdown
+                        # Display restaurant card using markdown
                         st.markdown(f"""
                         <div class="restaurant-grid-card">
                             <div class="restaurant-grid-image">
@@ -2080,6 +2099,17 @@ else:
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
+
+                        # Clickable button below card
+                        if st.button(
+                            "View Availability",
+                            key=f"browse_card_{idx}_{restaurant['venue_id']}",
+                            use_container_width=True,
+                            type="primary"
+                        ):
+                            st.session_state.selected_restaurant = restaurant
+                            st.session_state.view_mode = 'detail'
+                            st.rerun()
     else:
         st.markdown("""
         <div class="no-results">
